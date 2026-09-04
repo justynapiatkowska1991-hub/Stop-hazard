@@ -1,8 +1,8 @@
 package pl.stophazard.app
 
 /**
- * Central domain policy for the STOP HAZARD DNS filter.
- * Exact domains and their subdomains are blocked; look-alike domains are not.
+ * Built-in gambling domain policy.
+ * Matching is case-insensitive and covers only the exact domain or its subdomains.
  */
 object BlockedDomains {
     private val domains: Set<String> = setOf(
@@ -25,6 +25,6 @@ object BlockedDomains {
     fun normalize(host: String): String =
         host.trim()
             .lowercase()
-            .removePrefix("www.")
             .removeSuffix(".")
+            .removePrefix("www.")
 }
