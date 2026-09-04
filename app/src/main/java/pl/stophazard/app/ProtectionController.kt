@@ -29,4 +29,13 @@ class ProtectionController(private val context: Context) {
     fun stop() {
         context.stopService(Intent(context, BlockingVpnService::class.java))
     }
+
+    fun syncWithState(enabled: Boolean): Boolean {
+        if (!enabled) {
+            stop()
+            return true
+        }
+        if (!isAuthorized()) return false
+        return start()
+    }
 }
