@@ -12,7 +12,7 @@ class VpnFlowRuntime(
 
     private val upstream = UpstreamTransport()
     private val coordinator = FlowTransportCoordinator(policy, transport = upstream)
-    private val responseRouter = VpnResponseRouter(tunOutput)
+    private val responseRouter = VpnResponseRouter(tunOutput)\n    private val tcpValidator = TcpFlowValidator()
     private val receiveLoop = TransportReceiveLoop(
         transport = upstream,
         onTcpData = { key, data -> responseRouter.route(key, data) },
@@ -41,7 +41,7 @@ class VpnFlowRuntime(
     }
 
     fun send(packet: TunPacketCodec.Packet): Boolean {
-        val result = coordinator.admit(packet)
+        if (packet.protocol == 6) {\n            val key = TcpFlowStateTable.Key(packet.sourceIp, packet.sourcePort, packet.destinationIp, packet.destinationPort)\n            val segment = TcpSegmentParser.parse(packet) ?: return false\n            if (!tcpValidator.validate(key, segment)) return false\n        }\n\n        val result = coordinator.admit(packet)
         if (!result.allowed) return false
         if (!coordinator.openUpstream(packet)) {
             coordinator.close(packet)
