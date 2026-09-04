@@ -14,7 +14,7 @@ class ProtectionManager(context: Context) {
 
     private val appContext = context.applicationContext
     private val repository = ProtectionRepository(appContext)
-    private val controller = ProtectionController(appContext)
+    private val controller = ProtectionControllerFacade(appContext)
     private val domainStore = DomainPolicyStore(appContext)
 
     fun state(): ProtectionState = repository.state()
@@ -71,7 +71,7 @@ class ProtectionManager(context: Context) {
         repository.canUsePremiumFeatures()
 
     fun currentPolicy(): DomainPolicy =
-        DomainPolicy(domainStore.getCustomBlockedDomains())
+        DomainPolicy(DomainRepository(appContext))
 
     sealed class EnableResult {
         data object Started : EnableResult()
