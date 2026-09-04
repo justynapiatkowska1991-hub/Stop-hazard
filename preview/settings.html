@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>STOP HAZARD — ustawienia</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="phone">
+<header class="topbar"><div><span class="eyebrow">STOP HAZARD</span><h1>Ustawienia</h1></div><span class="shield">⚙</span></header>
+<section class="card">
+  <div class="section-title"><h2>Ochrona</h2></div>
+  <label class="setting"><span><b>Tryb ścisły</b><small>Blokuj dodatkowe kategorie ryzyka</small></span><input id="strictMode" type="checkbox"></label>
+  <label class="setting"><span><b>Bezpieczne wyszukiwanie</b><small>Włącz bezpieczniejsze wyniki wyszukiwania</small></span><input id="safeSearch" type="checkbox"></label>
+  <label class="setting"><span><b>Ochrona przy starcie</b><small>Uruchamiaj ochronę razem z aplikacją</small></span><input id="startupProtection" type="checkbox"></label>
+</section>
+<section class="card">
+  <div class="section-title"><h2>Powiadomienia</h2></div>
+  <label class="setting"><span><b>Powiadomienia</b><small>Informuj o ważnych zdarzeniach</small></span><input id="notifications" type="checkbox"></label>
+  <label class="setting"><span><b>Dźwięk</b><small>Sygnalizuj zablokowanie strony</small></span><input id="sound" type="checkbox"></label>
+</section>
+<section class="card">
+  <div class="section-title"><h2>Prywatność</h2></div>
+  <label class="setting"><span><b>Ukryj statystyki</b><small>Nie pokazuj licznika na ekranie głównym</small></span><input id="hideStats" type="checkbox"></label>
+  <button id="reset" class="danger-button">Przywróć ustawienia</button>
+</section>
+<a class="back" href="index.html">← Wróć do ochrony</a>
+<script src="settings.js"></script>
+<script>
+const s=StopHazardSettings.get();
+["strictMode","safeSearch","startupProtection","notifications","sound","hideStats"].forEach(id=>{
+  const el=document.getElementById(id);el.checked=!!s[id];
+  el.onchange=()=>StopHazardSettings.update({[id]:el.checked});
+});
+document.getElementById("reset").onclick=()=>{
+  if(confirm("Przywrócić ustawienia domyślne?")){
+    StopHazardSettings.reset();location.reload();
+  }
+};
+</script>
+</main>
+</body>
+</html>
