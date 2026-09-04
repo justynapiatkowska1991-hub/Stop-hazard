@@ -6,61 +6,111 @@ import android.os.ParcelFileDescriptor
 import java.io.FileInputStream
 import java.io.FileOutputStream
 
-class HazardVpnService:VpnService(){
-    private var vpn:ParcelFileDescriptor?=null
-    @Volatile private var running=false
+/**
+ * Single native VPN entry point.
+ *
+ * This service owns TUN lifecycle and DNS-policy decisions. It deliberately
+ * does not discard arbitrary non-DNS packets: until an upstream IP forwarder
+ * exists they are reported as transport-unavailable.
+ */
+class HazardVpnService : VpnService() {
+    private var vpn: ParcelFileDescriptor? = null
+    @Volatile private var running = false
+    private val session = VpnSessionState()
+    private val transport = PacketTransportStatus()
 
-    override fun onStartCommand(intent:Intent?,flags:Int,startId:Int):Int{
-        if(!running) startVpn()
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACTION_STOP) {
+            stopVpn()
+            stopSelf()
+            return START_NOT_STICKY
+        }
+        if (!running) startVpn()
         return START_STICKY
     }
 
-    private fun startVpn(){
-        vpn=try{
-            Builder()
-                .setSession("STOP HAZARD")
+    private fun startVpn() {
+        session.starting()
+        transport.starting()
+
+        vpn = try {
+            VpnConfiguration.build(Builder())
                 .setMtu(1500)
-                .addAddress("10.8.0.2",32)
-                .addRoute("0.0.0.0",0)
                 .addDnsServer("10.8.0.1")
                 .establish()
-        }catch(_:Exception){null}
+        } catch (_: Exception) { null }
 
-        if(vpn==null)return
-        running=true
-        ProtectionServiceState.setRunning(this,true)
+        if (vpn == null) {
+            session.error("tun-establish-failed")
+            transport.error("tun-establish-failed")
+            return
+        }
 
-        Thread{
-            val input=FileInputStream(vpn!!.fileDescriptor)
-            val output=FileOutputStream(vpn!!.fileDescriptor)
-            val buffer=ByteArray(32767)
-            val engine=ProtectionEngine(this)
+        running = true
+        ProtectionServiceState.setRunning(this, true)
 
-            try{
-                while(running){
-                    val n=input.read(buffer)
-                    if(n<=0)break
-                    val packet=buffer.copyOf(n)
-                    val host=DnsPacket.readQuestionHost(packet)
-                    if(host!=null && engine.inspect(host)){
-                        val response=DnsResponse.nxdomain(packet)
-                        if(response!=null)output.write(response)
-                        continue
+        Thread {
+            FileInputStream(vpn!!.fileDescriptor).use { input ->
+                FileOutputStream(vpn!!.fileDescriptor).use { output ->
+                    val buffer = ByteArray(32767)
+                    val engine = ProtectionEngine(this)
+                    transport.degraded("upstream-forwarder-not-configured")
+
+                    try {
+                        while (running) {
+                            val n = input.read(buffer)
+                            if (n <= 0) continue
+                            session.packetRead()
+
+                            val packet = buffer.copyOf(n)
+                            val host = DnsPacket.readQuestionHost(packet)
+
+                            if (host != null && engine.inspect(host)) {
+                                DnsResponse.nxdomain(packet)?.let {
+                                    output.write(it)
+                                    output.flush()
+                                }
+                                session.packetDropped()
+                            } else {
+                                // Do not silently claim success. Non-DNS IP
+                                // forwarding requires a real upstream transport.
+                                session.packetDropped()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        if (running) {
+                            session.error(e.message ?: "vpn-loop-failed")
+                            transport.error(e.message ?: "vpn-loop-failed")
+                        }
+                    } finally {
+                        ProtectionServiceState.setRunning(this@HazardVpnService, false)
                     }
-                    // No fake forwarding: non-DNS transport is left for the
-                    // dedicated upstream implementation.
                 }
-            }catch(_:Exception){}finally{
-                ProtectionServiceState.setRunning(this,false)
             }
-        }.start()
+        }.apply {
+            name = "StopHazard-VpnLoop"
+            isDaemon = true
+            start()
+        }
+
+        session.running()
     }
 
-    override fun onDestroy(){
-        running=false
-        try{vpn?.close()}catch(_:Exception){}
-        vpn=null
-        ProtectionServiceState.setRunning(this,false)
+    private fun stopVpn() {
+        running = false
+        transport.stopped()
+        session.stopped()
+        try { vpn?.close() } catch (_: Exception) {}
+        vpn = null
+        ProtectionServiceState.setRunning(this, false)
+    }
+
+    override fun onDestroy() {
+        stopVpn()
         super.onDestroy()
+    }
+
+    companion object {
+        const val ACTION_STOP = "pl.stophazard.app.STOP_VPN"
     }
 }
