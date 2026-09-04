@@ -53,7 +53,7 @@ class HazardVpnService : VpnService() {
             FileInputStream(vpn!!.fileDescriptor).use { input ->
                 FileOutputStream(vpn!!.fileDescriptor).use { output ->
                     val buffer = ByteArray(32767)
-                    val engine = ProtectionEngine(this)\n                    val upstream = DnsUpstreamForwarder()
+                    val engine = ProtectionEngine(this)\n                    val policy = ProtectionManager(this@HazardVpnService).currentPolicy()\n                    val runtime = VpnFlowRuntime(policy, output)
                     transport.degraded("upstream-forwarder-not-configured")
 
                     try {
@@ -72,9 +72,13 @@ class HazardVpnService : VpnService() {
                                 }
                                 session.packetDropped()
                             } else {
-                                // Do not silently claim success. Non-DNS IP
-                                // forwarding requires a real upstream transport.
-                                session.packetDropped()
+                                val decoded = TunPacketCodec.parse(packet)
+                                if (decoded != null && runtime.send(decoded)) {
+                                    session.packetForwarded()
+                                    transport.ready()
+                                } else {
+                                    session.packetDropped()
+                                }
                             }
                         }
                     } catch (e: Exception) {
