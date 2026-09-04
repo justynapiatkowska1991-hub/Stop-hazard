@@ -37,4 +37,3 @@ tasks.withType<KotlinCompile>().configureEach {
         jvmTarget = "17"
     }
 }
-}
