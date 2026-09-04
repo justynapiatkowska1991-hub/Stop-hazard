@@ -35,6 +35,7 @@ class BlockingVpnService : VpnService() {
             .setSession("STOP HAZARD")
             .addAddress("10.10.0.2", 32)
             .addRoute("0.0.0.0", 0)
+            .addDnsServer("10.10.0.1")
             .setBlocking(true)
             .establish()
     }
