@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>STOP HAZARD — bezpieczeństwo</title><link rel="stylesheet" href="style.css"></head>
+<body><main class="phone">
+<header class="topbar"><div><span class="eyebrow">STOP HAZARD</span><h1>Bezpieczeństwo</h1></div><span class="shield">✓</span></header>
+<section class="hero active"><div class="status-dot"></div><div><strong>WYSOKI POZIOM OCHRONY</strong><p>Najważniejsze moduły są aktywne</p></div></section>
+<section class="card"><div class="section-title"><h2>Kontrola ochrony</h2><span class="premium">LIVE</span></div>
+<div class="setting"><span><b>Blokowanie domen</b><small>Lista ryzykownych domen jest sprawdzana</small></span><span class="ok">✓</span></div>
+<div class="setting"><span><b>Własne reguły</b><small>Twoje dodatkowe blokady są aktywne</small></span><span class="ok">✓</span></div>
+<div class="setting"><span><b>Historia zdarzeń</b><small>Zdarzenia ochrony są dostępne lokalnie</small></span><span class="ok">✓</span></div>
+</section>
+<section class="card"><div class="section-title"><h2>Statystyki</h2></div>
+<div class="stats"><div class="stat"><span id="blocked">—</span><small>Zablokowane</small></div><div class="stat"><span id="allowed">—</span><small>Dozwolone</small></div><div class="stat"><span id="streak">—</span><small>Dni ochrony</small></div></div></section>
+<a class="back" href="index.html">← Wróć do aplikacji</a>
+<script src="dashboard.js"></script><script>
+const s=StopHazardDashboard.get();
+blocked.textContent=s.blocked.toLocaleString("pl-PL");allowed.textContent=s.allowed.toLocaleString("pl-PL");streak.textContent=s.streak;
+</script></main></body></html>
