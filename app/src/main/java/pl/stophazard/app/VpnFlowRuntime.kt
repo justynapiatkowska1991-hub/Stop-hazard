@@ -40,6 +40,20 @@ class VpnFlowRuntime(
         return result
     }
 
+    fun send(packet: TunPacketCodec.Packet): Boolean {
+        val result = coordinator.admit(packet)
+        if (!result.allowed) return false
+        if (!coordinator.openUpstream(packet)) {
+            coordinator.close(packet)
+            return false
+        }
+        responseRouter.register(packet)
+        val key = packetKey(packet)
+        if (packet.protocol == 6) receiveLoop.watchTcp(key)
+        if (packet.protocol == 17) receiveLoop.watchUdp(key)
+        return true
+    }
+
     fun close(packet: TunPacketCodec.Packet) {
         val key = packetKey(packet)
         receiveLoop.stop(key)
