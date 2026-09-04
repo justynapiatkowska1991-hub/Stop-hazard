@@ -9,13 +9,13 @@ function renderDomains(){
     $("domainList").appendChild(row);
   });
   $("domainCount").textContent=state.domains.length;
+  $("domains").textContent=8+state.domains.length;
 }
 function escapeHtml(v){return v.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]))}
 function save(){localStorage.setItem("stopHazardDomains",JSON.stringify(state.domains))}
 function setProtection(enabled){
   state.enabled=enabled;
   $("toggle").classList.toggle("on",enabled);
-  document.querySelector(".hero").classList.toggle("active",enabled);
   document.querySelector(".hero strong").textContent=enabled?"OCHRONA AKTYWNA":"OCHRONA WYŁĄCZONA";
   document.querySelector(".hero p").textContent=enabled?"Urządzenie jest chronione":"Ochrona jest obecnie wyłączona";
   document.querySelector(".status-dot").style.background=enabled?"#55e77d":"#777";
@@ -29,7 +29,7 @@ $("addDomain").onclick=()=>{
 };
 $("domainInput").addEventListener("keydown",e=>{if(e.key==="Enter")$("addDomain").click()});
 $("clear").onclick=()=>{$("activity").innerHTML="<div class='activity-row'><span class='ok'>✓</span><div><b>Brak nowej aktywności</b><small>Historia została wyczyszczona</small></div></div>"};
-$("plans").onclick=()=>alert("Premium: 29,99 zł/miesiąc lub 159 zł/rok. Płatności zostaną podłączone do Google Play w wersji produkcyjnej.");
+$("plans").onclick=()=>alert("Premium: 29,99 zł/miesiąc lub 159 zł/rok.");
 $("navActivity").onclick=()=>document.querySelector(".card").scrollIntoView({behavior:"smooth"});
-$("navSettings").onclick=()=>alert("Ustawienia STOP HAZARD — wersja demonstracyjna.");
+$("navSettings").onclick=()=>location.href="settings.html";
 renderDomains();setProtection(true);
