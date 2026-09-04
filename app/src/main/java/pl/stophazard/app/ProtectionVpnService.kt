@@ -9,6 +9,7 @@ import android.os.ParcelFileDescriptor
  * Creates the TUN interface and reports lifecycle state.
  * Packet forwarding is intentionally left to the routing engine.
  */
+@Deprecated("Use HazardVpnService as the single VPN entry point")
 class ProtectionVpnService : VpnService() {
     private var tun: ParcelFileDescriptor? = null
     private val state = VpnSessionState()
