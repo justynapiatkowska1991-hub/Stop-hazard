@@ -1,5 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
     <application android:theme="@style/Theme.StopHazard" android:label="STOP HAZARD" android:allowBackup="false" android:supportsRtl="true">
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
@@ -7,8 +9,17 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <service android:name=".HazardVpnService" android:permission="android.permission.BIND_VPN_SERVICE" android:exported="false">
+
+        <service android:name=".HazardVpnService"
+            android:permission="android.permission.BIND_VPN_SERVICE"
+            android:exported="false">
             <intent-filter><action android:name="android.net.VpnService"/></intent-filter>
         </service>
+
+        <receiver android:name=".BootReceiver" android:enabled="true" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>
