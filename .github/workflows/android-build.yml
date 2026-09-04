@@ -1,4 +1,5 @@
 name: Android build
+# CI: compile and test on every push
 
 on:
   push:
