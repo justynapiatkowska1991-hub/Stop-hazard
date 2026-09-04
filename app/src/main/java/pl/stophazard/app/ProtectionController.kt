@@ -13,6 +13,8 @@ class ProtectionController(private val context: Context) {
 
     fun prepareVpn(): Intent? = VpnService.prepare(context)
 
+    fun isAuthorized(): Boolean = VpnService.prepare(context) == null
+
     fun start(): Boolean {
         val prepareIntent = VpnService.prepare(context)
         if (prepareIntent != null) return false
