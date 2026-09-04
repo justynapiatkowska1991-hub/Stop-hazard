@@ -7,9 +7,11 @@ import android.content.Intent
 import android.net.VpnService
 import android.os.Build
 import android.os.ParcelFileDescriptor
+import java.io.IOException
 
 class BlockingVpnService : VpnService() {
     private var vpnInterface: ParcelFileDescriptor? = null
+    @Volatile private var running = false
 
     override fun onCreate() {
         super.onCreate()
@@ -20,19 +22,51 @@ class BlockingVpnService : VpnService() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        establishVpnInterface()
+        if (!running) {
+            establishVpnInterface()
+            startPacketLoop()
+        }
         return START_STICKY
     }
 
     private fun establishVpnInterface() {
         if (vpnInterface != null) return
-
         vpnInterface = Builder()
             .setSession("STOP HAZARD")
             .addAddress("10.10.0.2", 32)
             .addRoute("0.0.0.0", 0)
             .setBlocking(true)
             .establish()
+    }
+
+    private fun startPacketLoop() {
+        val fd = vpnInterface ?: return
+        running = true
+
+        Thread {
+            val buffer = ByteArray(32767)
+            try {
+                while (running) {
+                    val count = fd.fileDescriptor.let { descriptor ->
+                        java.io.FileInputStream(descriptor).read(buffer)
+                    }
+                    if (count <= 0) break
+
+                    // Traffic is deliberately not forwarded yet.
+                    // The filtering/tunneling layer must be implemented before
+                    // production use; dropping packets here prevents accidental
+                    // plaintext forwarding while the engine is incomplete.
+                }
+            } catch (_: IOException) {
+                // Expected when the VPN descriptor is closed during shutdown.
+            } finally {
+                running = false
+            }
+        }.apply {
+            name = "stop-hazard-vpn"
+            isDaemon = true
+            start()
+        }
     }
 
     private fun createNotificationChannel() {
@@ -65,10 +99,20 @@ class BlockingVpnService : VpnService() {
                 .build()
         }
 
+    override fun onRevoke() {
+        stopVpn()
+        super.onRevoke()
+    }
+
     override fun onDestroy() {
+        stopVpn()
+        super.onDestroy()
+    }
+
+    private fun stopVpn() {
+        running = false
         vpnInterface?.close()
         vpnInterface = null
-        super.onDestroy()
     }
 
     companion object {
