@@ -1,44 +1,13 @@
-<!doctype html>
-<html lang="pl">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>STOP HAZARD — ustawienia</title>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-<main class="phone">
+<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>STOP HAZARD — ustawienia</title><link rel="stylesheet" href="style.css"></head><body><main class="phone">
 <header class="topbar"><div><span class="eyebrow">STOP HAZARD</span><h1>Ustawienia</h1></div><span class="shield">⚙</span></header>
-<section class="card">
-  <div class="section-title"><h2>Ochrona</h2></div>
-  <label class="setting"><span><b>Tryb ścisły</b><small>Blokuj dodatkowe kategorie ryzyka</small></span><input id="strictMode" type="checkbox"></label>
-  <label class="setting"><span><b>Bezpieczne wyszukiwanie</b><small>Włącz bezpieczniejsze wyniki wyszukiwania</small></span><input id="safeSearch" type="checkbox"></label>
-  <label class="setting"><span><b>Ochrona przy starcie</b><small>Uruchamiaj ochronę razem z aplikacją</small></span><input id="startupProtection" type="checkbox"></label>
-</section>
-<section class="card">
-  <div class="section-title"><h2>Powiadomienia</h2></div>
-  <label class="setting"><span><b>Powiadomienia</b><small>Informuj o ważnych zdarzeniach</small></span><input id="notifications" type="checkbox"></label>
-  <label class="setting"><span><b>Dźwięk</b><small>Sygnalizuj zablokowanie strony</small></span><input id="sound" type="checkbox"></label>
-</section>
-<section class="card">
-  <div class="section-title"><h2>Prywatność</h2></div>
-  <label class="setting"><span><b>Ukryj statystyki</b><small>Nie pokazuj licznika na ekranie głównym</small></span><input id="hideStats" type="checkbox"></label>
-  <button id="reset" class="danger-button">Przywróć ustawienia</button>
-</section>
-<a class="back" href="index.html">← Wróć do ochrony</a>
-<script src="settings.js"></script>
-<script>
-const s=StopHazardSettings.get();
-["strictMode","safeSearch","startupProtection","notifications","sound","hideStats"].forEach(id=>{
-  const el=document.getElementById(id);el.checked=!!s[id];
-  el.onchange=()=>StopHazardSettings.update({[id]:el.checked});
-});
-document.getElementById("reset").onclick=()=>{
-  if(confirm("Przywrócić ustawienia domyślne?")){
-    StopHazardSettings.reset();location.reload();
-  }
-};
-</script>
-</main>
-</body>
-</html>
+<section class="card"><div class="section-title"><h2>Ochrona</h2></div>
+<label class="setting"><span><b>Ochrona 24/7</b><small>Główny przełącznik ochrony</small></span><input id="protection" type="checkbox" checked></label>
+<label class="setting"><span><b>Tryb ścisły</b><small>Wymaga potwierdzenia przy zmianach</small></span><input id="strict" type="checkbox" checked></label>
+<label class="setting"><span><b>Powiadomienia</b><small>Informuj o zablokowanych próbach</small></span><input id="notify" type="checkbox" checked></label></section>
+<section class="card"><div class="section-title"><h2>Blokowanie</h2></div>
+<div class="setting" onclick="location.href='security.html'"><span><b>Poziom bezpieczeństwa</b><small>Sprawdź stan wszystkich kontroli</small></span><span class="ok">→</span></div>
+<div class="setting" onclick="location.href='index.html#custom'"><span><b>Własne blokady</b><small>Dodawaj domeny do swojej listy</small></span><span class="ok">→</span></div></section>
+<section class="card"><div class="section-title"><h2>Konto i plan</h2><span class="premium">PREMIUM</span></div><div class="plan"><div><strong>STOP HAZARD Premium</strong><small>Pełna ochrona i funkcje dodatkowe</small></div><button onclick="alert('Panel płatności zostanie podłączony w wersji produkcyjnej.')">Zarządzaj</button></div></section>
+<section class="card"><div class="section-title"><h2>Pomoc</h2></div><div class="setting" onclick="location.href='help.html'"><span><b>Centrum pomocy</b><small>FAQ i informacje o aplikacji</small></span><span class="ok">→</span></div><div class="setting" onclick="location.href='privacy.html'"><span><b>Prywatność</b><small>Zasady i dane lokalne</small></span><span class="ok">→</span></div></section>
+<nav class="bottom"><button class="nav" onclick="location.href='index.html'">⌂<span>Start</span></button><button class="nav" onclick="location.href='activity.html'">◷<span>Aktywność</span></button><button class="nav active">⚙<span>Ustawienia</span></button></nav>
+</main><script>["protection","strict","notify"].forEach(id=>{const el=document.getElementById(id),k="stopHazard_"+id;el.checked=localStorage.getItem(k)!=="0";el.onchange=()=>localStorage.setItem(k,el.checked?"1":"0")});</script></body></html>
