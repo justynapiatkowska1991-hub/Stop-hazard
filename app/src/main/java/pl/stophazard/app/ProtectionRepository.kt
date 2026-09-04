@@ -20,4 +20,7 @@ class ProtectionRepository(context: Context) {
 
     fun isPremium(): Boolean =
         state().tier == SubscriptionTier.PREMIUM
+
+    fun canUsePremiumFeatures(): Boolean =
+        state().tier == SubscriptionTier.PREMIUM
 }
