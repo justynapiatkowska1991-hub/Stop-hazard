@@ -24,18 +24,11 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
-
-      - name: Check Gradle wrapper
-        run: |
-          if [ ! -f ./gradlew ]; then
-            echo "Gradle wrapper (gradlew) is missing."
-            echo "Generate it locally with: gradle wrapper"
-            exit 1
-          fi
-          chmod +x ./gradlew
+        with:
+          gradle-version: "8.10.2"
 
       - name: Assemble debug
-        run: ./gradlew assembleDebug --stacktrace
+        run: gradle assembleDebug --stacktrace
 
       - name: Run unit tests
-        run: ./gradlew test --stacktrace
+        run: gradle test --stacktrace
