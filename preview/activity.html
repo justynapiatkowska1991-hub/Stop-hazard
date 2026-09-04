@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>STOP HAZARD — aktywność</title><link rel="stylesheet" href="style.css"></head>
+<body><main class="phone">
+<header class="topbar"><div><span class="eyebrow">STOP HAZARD</span><h1>Aktywność</h1></div><span class="shield">◷</span></header>
+<section class="stats"><div class="stat"><span>1 284</span><small>Blokady</small></div><div class="stat"><span>17</span><small>Dzisiaj</small></div><div class="stat"><span>99,9%</span><small>Gotowość</small></div></section>
+<section class="card"><div class="section-title"><h2>Dzisiaj</h2><button id="clear">Wyczyść</button></div><div id="feed"></div></section>
+<a class="back" href="index.html">← Ekran główny</a>
+</main><script>
+const events=[
+ ["bet365.com","Próba dostępu zablokowana","teraz","danger"],
+ ["casino-example.com","Próba dostępu zablokowana","8 min","danger"],
+ ["youtube.com","Połączenie dozwolone","14 min","ok"],
+ ["example-bet.com","Próba dostępu zablokowana","27 min","danger"],
+ ["google.com","Połączenie dozwolone","41 min","ok"]
+];
+const feed=document.getElementById("feed");
+function render(){feed.innerHTML=events.map(e=>'<div class="activity-row"><span class="'+e[3]+'">'+(e[3]=="danger"?"×":"✓")+'</span><div><b>'+e[0]+'</b><small>'+e[1]+'</small></div><time>'+e[2]+'</time></div>').join("")}
+document.getElementById("clear").onclick=()=>{events.length=0;render();};
+render();
+</script></body></html>
