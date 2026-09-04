@@ -20,12 +20,13 @@ class BlockingVpnService : VpnService() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        establishLocalInterface()
+        establishVpnInterface()
         return START_STICKY
     }
 
-    private fun establishLocalInterface() {
+    private fun establishVpnInterface() {
         if (vpnInterface != null) return
+
         vpnInterface = Builder()
             .setSession("STOP HAZARD")
             .addAddress("10.10.0.2", 32)
@@ -38,7 +39,7 @@ class BlockingVpnService : VpnService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "STOP HAZARD",
+                "STOP HAZARD — ochrona",
                 NotificationManager.IMPORTANCE_LOW
             )
             getSystemService(NotificationManager::class.java)
