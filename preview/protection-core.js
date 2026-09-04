@@ -1,0 +1,13 @@
+(()=>{"use strict";
+const STORAGE="stopHazardCore";
+const DEFAULT={enabled:true,strict:true,blocked:0,attempts:0,allowed:0,last:null,sessionStarted:new Date().toISOString()};
+const BUILTIN=["bet365.com","betway.com","bwin.com","unibet.com","betfair.com","stake.com","betano.com","1xbet.com","888.com","888casino.com","pokerstars.com","pokerstarscasino.com","casino.com","casumo.com","betsson.com","leovegas.com","williamhill.com","ladbrokes.com","coral.co.uk","sportingbet.com","betvictor.com","parimatch.com","melbet.com","22bet.com","roobet.com","bc.game","cloudbet.com","rollbit.com","gamdom.com","duelbits.com","gg.bet","fortunejack.com","partypoker.com","videoslots.com","jackpotcity.com","royalpanda.com","spinpalace.com","betonline.ag","sportsbetting.ag","mybookie.ag","mostbet.com","1win.pro"];
+const normalize=v=>String(v??"").trim().toLowerCase().replace(/^https?:\\/\\//,"").replace(/^www\\./,"").split("/")[0].split(":")[0];
+const read=()=>{try{return {...DEFAULT,...JSON.parse(localStorage.getItem(STORAGE)||"{}")}}catch{return {...DEFAULT}}};
+const write=s=>{localStorage.setItem(STORAGE,JSON.stringify(s));return s};
+const custom=()=>{try{return JSON.parse(localStorage.getItem("stopHazardCustomDomains")||"[]").map(normalize)}catch{return[]}};
+const blocked=(host)=>{const s=read();if(!s.enabled)return false;const h=normalize(host);return [...new Set([...BUILTIN,...custom()])].some(d=>h===d||h.endsWith("."+d))};
+const inspect=host=>{const s=read(),h=normalize(host);s.attempts++;const hit=blocked(h);if(hit){s.blocked++;s.last={host:h,time:Date.now()}}else s.allowed++;write(s);return{host:h,blocked:hit,mode:s.strict?"strict":"standard"}};
+const add=host=>{const h=normalize(host);if(!h.includes("."))return false;const a=custom();if(!a.includes(h))a.push(h);localStorage.setItem("stopHazardCustomDomains",JSON.stringify(a.slice(0,2000)));return true};
+window.StopHazardCore={normalize,inspect,blocked,add,remove(h){const n=normalize(h);localStorage.setItem("stopHazardCustomDomains",JSON.stringify(custom().filter(x=>x!==n)))},domains:()=>[...new Set([...BUILTIN,...custom()])],stats:()=>read(),enable:()=>write({...read(),enabled:true}),disable:()=>write({...read(),enabled:false}),strict:v=>write({...read(),strict:!!v}),reset:()=>write({...DEFAULT})};
+})();
