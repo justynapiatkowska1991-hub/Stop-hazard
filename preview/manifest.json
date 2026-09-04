@@ -1,0 +1,10 @@
+{
+  "name":"STOP HAZARD",
+  "short_name":"STOP HAZARD",
+  "lang":"pl",
+  "start_url":"./index.html",
+  "display":"standalone",
+  "background_color":"#0d1014",
+  "theme_color":"#101318",
+  "description":"Podgląd aplikacji STOP HAZARD"
+}
