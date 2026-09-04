@@ -5,21 +5,22 @@ import android.content.Intent
 import android.net.VpnService
 import android.os.Bundle
 
-class MainActivity : Activity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        requestVpnPermission()
+class MainActivity:Activity(){
+    private val requestCode=7001
+    override fun onCreate(state:Bundle?){
+        super.onCreate(state)
+        if(ProtectionState.isEnabled(this)) requestVpn()
     }
-
-    private fun requestVpnPermission() {
-        val intent = VpnService.prepare(this)
-        if (intent != null) startActivityForResult(intent, 7001)
-        else startService(Intent(this, HazardVpnService::class.java))
+    private fun requestVpn(){
+        val permission=VpnService.prepare(this)
+        if(permission!=null) startActivityForResult(permission,requestCode)
+        else startProtection()
     }
-
-    override fun onActivityResult(requestCode:Int,resultCode:Int,data:Intent?) {
-        super.onActivityResult(requestCode,resultCode,data)
-        if(requestCode==7001 && resultCode==RESULT_OK)
-            startService(Intent(this,HazardVpnService::class.java))
+    private fun startProtection(){
+        startService(Intent(this,HazardVpnService::class.java))
+    }
+    override fun onActivityResult(req:Int,result:Int,data:Intent?){
+        super.onActivityResult(req,result,data)
+        if(req==requestCode && result==RESULT_OK) startProtection()
     }
 }
