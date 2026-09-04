@@ -1,10 +1,1 @@
-{
-  "name":"STOP HAZARD",
-  "short_name":"STOP HAZARD",
-  "lang":"pl",
-  "start_url":"./index.html",
-  "display":"standalone",
-  "background_color":"#0d1014",
-  "theme_color":"#101318",
-  "description":"Podgląd aplikacji STOP HAZARD"
-}
+{"name":"STOP HAZARD","short_name":"STOP HAZARD","start_url":"./index.html","display":"standalone","background_color":"#080b0e","theme_color":"#143b28","lang":"pl","description":"Panel podglądu aplikacji STOP HAZARD"}
