@@ -1,24 +1,19 @@
 package pl.stophazard.app
 
-class ProtectionEngine(
-    private val settingsStore: ProtectionSettingsStore,
-    private val rules: DomainRuleRepository,
-    private val events: ProtectionEventRecorder
-) {
-    fun evaluate(host:String):Decision{
-        val normalized=BlockedDomains.normalize(host)
-        if(normalized.isBlank()) return Decision.Allow
-        val settings=settingsStore.get()
-        if(!settings.enabled) return Decision.Allow
-        if(rules.isBlocked(normalized)){
-            events.record(normalized,true)
-            return Decision.Block("Domena znajduje się na liście blokad")
-        }
-        return Decision.Allow.also{events.record(normalized,false)}
+import android.content.Context
+
+class ProtectionEngine(private val context:Context) {
+    private val domains=DomainRepository(context)
+    private val policy=DomainPolicy(domains)
+
+    fun inspect(host:String):Boolean {
+        val blocked=policy.isBlocked(host)
+        ProtectionStatsStore.record(context,blocked)
+        if(blocked) BlockedLog.record(context,BlockedDomains.normalize(host))
+        return blocked
     }
 
-    sealed class Decision{
-        data class Block(val reason:String):Decision()
-        data object Allow:Decision()
-    }
+    fun addCustomDomain(host:String)=policy.add(host)
+    fun removeCustomDomain(host:String)=policy.remove(host)
+    fun customDomains():Set<String>=domains.getCustom()
 }
