@@ -66,3 +66,5 @@ button{border:0}
 .nav span{display:block;font-size:9px;margin-top:3px}
 .nav.active{background:#193526;color:var(--green)}
 @media(min-width:700px){.phone{margin:25px auto;border:1px solid var(--line);border-radius:28px;min-height:calc(100vh - 50px);box-shadow:var(--shadow)}.bottom{position:static;transform:none;width:100%;margin-top:24px}}
+
+.security-score{display:flex;align-items:center;gap:16px}.security-score strong{font-size:15px}.security-score p{margin:5px 0 0;color:var(--muted);font-size:11px}.score-ring{width:74px;height:74px;flex:0 0 auto;border-radius:50%;display:grid;place-items:center;border:7px solid #2b4938;background:#102318;color:var(--green);font-weight:900}.score-ring span{font-size:15px}.blocked-page{min-height:55vh;display:flex;flex-direction:column;align-items:center;justify-content:center}.blocked-page h1{margin:10px 0;font-size:25px}.blocked-page p{max-width:320px}.primary{background:var(--green);color:#07110b}.secondary{background:transparent;color:var(--muted)}
