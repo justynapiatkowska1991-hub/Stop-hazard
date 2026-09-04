@@ -1,8 +1,5 @@
 package pl.stophazard.app
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.Intent
 import android.net.VpnService
 import android.os.Build
@@ -15,9 +12,9 @@ class BlockingVpnService : VpnService() {
 
     override fun onCreate() {
         super.onCreate()
-        createNotificationChannel()
+        ProtectionNotification.createChannel(this)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForeground(NOTIFICATION_ID, buildNotification())
+            startForeground(ProtectionNotification.NOTIFICATION_ID, ProtectionNotification.build(this, true))
         }
     }
 
@@ -70,36 +67,6 @@ class BlockingVpnService : VpnService() {
         }
     }
 
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "STOP HAZARD — ochrona",
-                NotificationManager.IMPORTANCE_LOW
-            )
-            getSystemService(NotificationManager::class.java)
-                .createNotificationChannel(channel)
-        }
-    }
-
-    private fun buildNotification(): Notification =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Notification.Builder(this, CHANNEL_ID)
-                .setContentTitle("STOP HAZARD")
-                .setContentText("Ochrona jest aktywna")
-                .setSmallIcon(android.R.drawable.ic_lock_lock)
-                .setOngoing(true)
-                .build()
-        } else {
-            @Suppress("DEPRECATION")
-            Notification.Builder(this)
-                .setContentTitle("STOP HAZARD")
-                .setContentText("Ochrona jest aktywna")
-                .setSmallIcon(android.R.drawable.ic_lock_lock)
-                .setOngoing(true)
-                .build()
-        }
-
     override fun onRevoke() {
         stopVpn()
         super.onRevoke()
@@ -116,8 +83,4 @@ class BlockingVpnService : VpnService() {
         vpnInterface = null
     }
 
-    companion object {
-        private const val CHANNEL_ID = "stop_hazard_protection"
-        private const val NOTIFICATION_ID = 1001
-    }
 }
