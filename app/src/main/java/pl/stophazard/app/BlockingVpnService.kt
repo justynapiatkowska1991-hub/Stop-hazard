@@ -67,6 +67,14 @@ class BlockingVpnService : VpnService() {
         }
     }
 
+    /**
+     * Returns true when a hostname is denied by the current domain policy.
+     * Packet forwarding is intentionally kept separate from this decision
+     * until a complete TCP/UDP forwarding implementation is in place.
+     */
+    private fun shouldBlockHost(hostname: String): Boolean =
+        DomainPolicy().shouldBlock(hostname)
+
     override fun onRevoke() {
         stopVpn()
         super.onRevoke()
