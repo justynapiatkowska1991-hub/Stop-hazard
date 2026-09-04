@@ -1,20 +1,13 @@
-<!doctype html>
-<html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>STOP HAZARD — aktywność</title><link rel="stylesheet" href="style.css"></head>
-<body><main class="phone">
+<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>STOP HAZARD — aktywność</title><link rel="stylesheet" href="style.css"></head><body><main class="phone">
 <header class="topbar"><div><span class="eyebrow">STOP HAZARD</span><h1>Aktywność</h1></div><span class="shield">◷</span></header>
-<section class="stats"><div class="stat"><span>1 284</span><small>Blokady</small></div><div class="stat"><span>17</span><small>Dzisiaj</small></div><div class="stat"><span>99,9%</span><small>Gotowość</small></div></section>
-<section class="card"><div class="section-title"><h2>Dzisiaj</h2><button id="clear">Wyczyść</button></div><div id="feed"></div></section>
-<a class="back" href="index.html">← Ekran główny</a>
+<section class="stats"><div class="stat"><span id="all">0</span><small>Wszystkie</small></div><div class="stat"><span id="blocked">0</span><small>Zablokowane</small></div><div class="stat"><span id="allowed">0</span><small>Dozwolone</small></div></section>
+<section class="card"><div class="section-title"><h2>Historia zdarzeń</h2><button id="clear">Wyczyść</button></div><div id="list"></div></section>
+<section class="card"><div class="section-title"><h2>Szybkie akcje</h2></div><div class="setting" onclick="location.href='index.html'"><span><b>Start</b><small>Wróć do panelu ochrony</small></span><span class="ok">→</span></div><div class="setting" onclick="location.href='settings.html'"><span><b>Ustawienia</b><small>Zarządzaj ochroną</small></span><span class="ok">→</span></div></section>
+<nav class="bottom"><button class="nav" onclick="location.href='index.html'">⌂<span>Start</span></button><button class="nav active">◷<span>Aktywność</span></button><button class="nav" onclick="location.href='settings.html'">⚙<span>Ustawienia</span></button></nav>
 </main><script>
-const events=[
- ["bet365.com","Próba dostępu zablokowana","teraz","danger"],
- ["casino-example.com","Próba dostępu zablokowana","8 min","danger"],
- ["youtube.com","Połączenie dozwolone","14 min","ok"],
- ["example-bet.com","Próba dostępu zablokowana","27 min","danger"],
- ["google.com","Połączenie dozwolone","41 min","ok"]
-];
-const feed=document.getElementById("feed");
-function render(){feed.innerHTML=events.map(e=>'<div class="activity-row"><span class="'+e[3]+'">'+(e[3]=="danger"?"×":"✓")+'</span><div><b>'+e[0]+'</b><small>'+e[1]+'</small></div><time>'+e[2]+'</time></div>').join("")}
-document.getElementById("clear").onclick=()=>{events.length=0;render();};
-render();
+const KEY="stopHazardEvents";const seed=[{host:"bet365.com",blocked:true,age:"teraz"},{host:"example-bet.com",blocked:true,age:"2 min"},{host:"youtube.com",blocked:false,age:"5 min"}];
+function get(){try{const x=JSON.parse(localStorage.getItem(KEY));return Array.isArray(x)&&x.length?x:seed}catch{return seed}}
+function draw(){const e=get();all.textContent=e.length;blocked.textContent=e.filter(x=>x.blocked).length;allowed.textContent=e.filter(x=>!x.blocked).length;list.innerHTML=e.map(x=>'<div class="activity-row"><span class="'+(x.blocked?"danger":"ok")+'">'+(x.blocked?"×":"✓")+'</span><div><b>'+escape(x.host)+'</b><small>'+(x.blocked?"Próba dostępu zablokowana":"Połączenie dozwolone")+'</small></div><time>'+escape(x.age||"teraz")+'</time></div>').join("")}
+function escape(v){return String(v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+clear.onclick=()=>{localStorage.setItem(KEY,"[]");draw()};draw();
 </script></body></html>
