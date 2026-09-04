@@ -1,0 +1,26 @@
+/* STOP HAZARD — cinematic UI direction */
+:root{--lime:#72f5a0;--ink:#050709;--surface:#0d1216;--surface2:#131a1f;--edge:rgba(255,255,255,.085);--soft:rgba(114,245,160,.12)}
+*{scrollbar-width:thin;scrollbar-color:#33413a transparent}
+body{background:#050709;color:#f7faf8}
+.phone{background:
+ radial-gradient(700px 340px at 50% -80px,rgba(114,245,160,.16),transparent 66%),
+ radial-gradient(500px 400px at 100% 45%,rgba(38,94,68,.11),transparent 70%),
+ linear-gradient(180deg,#080c0f,#050709);box-shadow:0 30px 100px rgba(0,0,0,.5)}
+.topbar{position:relative}.topbar:after{content:"";position:absolute;left:0;right:0;bottom:-12px;height:1px;background:linear-gradient(90deg,transparent,rgba(114,245,160,.3),transparent)}
+.eyebrow{text-shadow:0 0 18px rgba(114,245,160,.35)}
+.hero{overflow:hidden;min-height:132px;border:1px solid rgba(114,245,160,.2);background:linear-gradient(135deg,rgba(24,39,31,.98),rgba(10,15,19,.96));box-shadow:0 22px 70px rgba(0,0,0,.4),inset 0 1px rgba(255,255,255,.06)}
+.hero:before{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.055) 50%,transparent 65%);transform:translateX(-120%);animation:cinematicSweep 5s ease-in-out infinite}
+.hero strong{font-size:17px;letter-spacing:.6px}.hero p{font-size:11px}
+.status-dot{width:12px;height:12px;background:var(--lime);box-shadow:0 0 0 7px rgba(114,245,160,.08),0 0 30px rgba(114,245,160,.55)}
+.shield{border-radius:20px;background:linear-gradient(145deg,#215e3c,#0b2015);border:1px solid rgba(114,245,160,.28);box-shadow:0 15px 45px rgba(0,0,0,.45),inset 0 1px rgba(255,255,255,.1)}
+.stat{position:relative;overflow:hidden;border:1px solid var(--edge);background:linear-gradient(145deg,rgba(20,27,32,.96),rgba(9,13,16,.96));box-shadow:0 12px 35px rgba(0,0,0,.25)}
+.stat:after{content:"";position:absolute;left:15%;right:15%;bottom:-25px;height:50px;background:var(--soft);filter:blur(20px)}
+.stat span,.stat small{position:relative;z-index:1}
+.card{border:1px solid var(--edge);background:linear-gradient(145deg,rgba(18,24,29,.95),rgba(9,13,16,.95));box-shadow:0 20px 55px rgba(0,0,0,.25),inset 0 1px rgba(255,255,255,.035)}
+.section-title h2{letter-spacing:.1px}.premium{letter-spacing:1.8px;border-color:rgba(114,245,160,.25);box-shadow:0 0 25px rgba(114,245,160,.07)}
+.plan button,.add button{position:relative;overflow:hidden;background:linear-gradient(135deg,#8affb0,#55dc88);box-shadow:0 12px 35px rgba(85,220,136,.18),inset 0 1px rgba(255,255,255,.4)}
+.plan button:after,.add button:after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 25%,rgba(255,255,255,.3) 50%,transparent 75%);transform:translateX(-120%);transition:transform .55s}.plan button:hover:after,.add button:hover:after{transform:translateX(120%)}
+.bottom{background:rgba(8,12,15,.9);border-color:rgba(255,255,255,.11);box-shadow:0 20px 60px rgba(0,0,0,.55),inset 0 1px rgba(255,255,255,.05)}
+.nav.active{background:linear-gradient(145deg,#1c4930,#102a1d);box-shadow:0 8px 24px rgba(0,0,0,.25),inset 0 1px rgba(255,255,255,.06)}
+@keyframes cinematicSweep{0%,35%{transform:translateX(-120%)}60%,100%{transform:translateX(120%)}}
+@media(prefers-reduced-motion:reduce){.hero:before{animation:none}}
