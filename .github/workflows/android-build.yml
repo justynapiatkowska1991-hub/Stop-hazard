@@ -27,8 +27,15 @@ jobs:
         with:
           gradle-version: "8.10.2"
 
+      - name: Prepare Gradle wrapper
+        run: |
+          if [ ! -f ./gradlew ]; then
+            gradle wrapper --gradle-version 8.10.2
+          fi
+          chmod +x ./gradlew
+
       - name: Assemble debug
-        run: gradle assembleDebug --stacktrace
+        run: ./gradlew assembleDebug --stacktrace
 
       - name: Run unit tests
-        run: gradle test --stacktrace
+        run: ./gradlew test --stacktrace
