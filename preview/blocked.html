@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>STOP HAZARD — strona zablokowana</title><link rel="stylesheet" href="style.css"></head>
+<body><main class="phone">
+<section class="card blocked-page">
+<div class="blocked-icon">🛡️</div><span class="eyebrow">STOP HAZARD</span><h1>Strona zablokowana</h1>
+<p>Ta strona została zablokowana zgodnie z ustawieniami ochrony.</p>
+<div class="reason"><b>Powód blokady</b><span id="reason">Domena znajduje się na liście blokad</span></div>
+<button id="back" class="primary">Wróć w bezpieczne miejsce</button>
+<button id="close" class="secondary">Zamknij</button>
+</section>
+</main><script>
+const params=new URLSearchParams(location.search);document.getElementById("reason").textContent=params.get("reason")||"Domena znajduje się na liście blokad";
+document.getElementById("back").onclick=()=>location.href="index.html";document.getElementById("close").onclick=()=>history.length>1?history.back():location.href="index.html";
+</script><style>
+.blocked-page{text-align:center;margin-top:22vh;padding:30px 22px}.blocked-icon{width:76px;height:76px;margin:0 auto 18px;display:grid;place-items:center;border-radius:25px;background:#35181e;font-size:34px}.blocked-page h1{font-size:25px;margin:10px 0}.blocked-page p{color:#89939a;font-size:12px;line-height:1.7}.reason{margin:22px 0;padding:13px;border-radius:13px;background:#0c1014;border:1px solid #263038;text-align:left}.reason b,.reason span{display:block}.reason span{font-size:11px;color:#89939a;margin-top:5px}.primary,.secondary{width:100%;padding:12px;border-radius:12px;font-weight:800;cursor:pointer}.primary{background:#68ef99;color:#07110b}.secondary{margin-top:8px;background:transparent;color:#89939a}
+</style></body></html>
