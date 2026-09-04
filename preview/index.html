@@ -1,71 +1,19 @@
 <!doctype html>
 <html lang="pl">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#101318">
-<title>STOP HAZARD — podgląd aplikacji</title>
-<link rel="stylesheet" href="style.css">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101318"><meta name="description" content="STOP HAZARD — podgląd aplikacji">
+<link rel="manifest" href="manifest.json"><title>STOP HAZARD — podgląd</title><link rel="stylesheet" href="style.css">
 </head>
-<body>
-<main class="phone">
-  <header class="topbar">
-    <div>
-      <span class="eyebrow">STOP HAZARD</span>
-      <h1>Twoja ochrona</h1>
-    </div>
-    <span class="shield">✓</span>
-  </header>
-
-  <section class="hero active">
-    <div class="status-dot"></div>
-    <div>
-      <strong>OCHRONA AKTYWNA</strong>
-      <p>Urządzenie jest chronione</p>
-    </div>
-    <button id="toggle" class="toggle on" aria-label="Przełącz ochronę">
-      <span></span>
-    </button>
-  </section>
-
-  <section class="stats">
-    <div class="stat"><span id="blocked">1 284</span><small>Zablokowane</small></div>
-    <div class="stat"><span>24/7</span><small>Ochrona</small></div>
-    <div class="stat"><span id="domains">8</span><small>Reguły</small></div>
-  </section>
-
-  <section class="card">
-    <div class="section-title"><h2>Ostatnia aktywność</h2><button id="clear">Wyczyść</button></div>
-    <div id="activity" class="activity">
-      <div class="activity-row"><span class="danger">×</span><div><b>bet365.com</b><small>Próba dostępu zablokowana</small></div><time>teraz</time></div>
-      <div class="activity-row"><span class="danger">×</span><div><b>example-bet.com</b><small>Próba dostępu zablokowana</small></div><time>2 min</time></div>
-      <div class="activity-row"><span class="ok">✓</span><div><b>youtube.com</b><small>Połączenie dozwolone</small></div><time>5 min</time></div>
-    </div>
-  </section>
-
-  <section class="card">
-    <div class="section-title"><h2>Twój plan</h2><span class="premium">PREMIUM</span></div>
-    <div class="plan">
-      <div><strong>Premium</strong><small>Pełna ochrona + funkcje Premium</small></div>
-      <button id="plans">Zarządzaj</button>
-    </div>
-  </section>
-
-  <section class="card">
-    <div class="section-title"><h2>Własne blokady</h2><span id="domainCount">0</span></div>
-    <div class="add">
-      <input id="domainInput" placeholder="np. moja-domena.pl" autocomplete="off">
-      <button id="addDomain">Dodaj</button>
-    </div>
-    <div id="domainList" class="domain-list"></div>
-  </section>
-
-  <nav class="bottom">
-    <button class="nav active">⌂<span>Start</span></button>
-    <button class="nav" id="navActivity">◷<span>Aktywność</span></button>
-    <button class="nav" id="navSettings">⚙<span>Ustawienia</span></button>
-  </nav>
-</main>
-<script src="app.js"></script>
-</body>
-</html>
+<body><main class="phone">
+<header class="topbar"><div><span class="eyebrow">STOP HAZARD</span><h1>Twoja ochrona</h1></div><span class="shield">✓</span></header>
+<section class="hero active"><div class="status-dot"></div><div><strong>OCHRONA AKTYWNA</strong><p>Urządzenie jest chronione</p></div><button id="toggle" class="toggle on"><span></span></button></section>
+<section class="stats"><div class="stat"><span id="blocked">1 284</span><small>Zablokowane</small></div><div class="stat"><span>24/7</span><small>Ochrona</small></div><div class="stat"><span id="domains">8</span><small>Reguły</small></div></section>
+<section class="card"><div class="section-title"><h2>Ostatnia aktywność</h2><button id="clear">Wyczyść</button></div><div id="activity" class="activity">
+<div class="activity-row"><span class="danger">×</span><div><b>bet365.com</b><small>Próba dostępu zablokowana</small></div><time>teraz</time></div>
+<div class="activity-row"><span class="danger">×</span><div><b>example-bet.com</b><small>Próba dostępu zablokowana</small></div><time>2 min</time></div>
+<div class="activity-row"><span class="ok">✓</span><div><b>youtube.com</b><small>Połączenie dozwolone</small></div><time>5 min</time></div></div></section>
+<section class="card"><div class="section-title"><h2>Twój plan</h2><span class="premium">PREMIUM</span></div><div class="plan"><div><strong>Premium</strong><small>Pełna ochrona + funkcje Premium</small></div><button id="plans">Zarządzaj</button></div></section>
+<section class="card"><div class="section-title"><h2>Własne blokady</h2><span id="domainCount">0</span></div><div class="add"><input id="domainInput" placeholder="np. moja-domena.pl"><button id="addDomain">Dodaj</button></div><div id="domainList" class="domain-list"></div></section>
+<nav class="bottom"><button class="nav active">⌂<span>Start</span></button><button class="nav" id="navActivity">◷<span>Aktywność</span></button><button class="nav" id="navSettings">⚙<span>Ustawienia</span></button></nav>
+</main><script src="app.js"></script><script>if("serviceWorker"in navigator)navigator.serviceWorker.register("offline.js");</script></body></html>
