@@ -40,7 +40,7 @@ class VpnFlowRuntime(
         return result
     }
 
-    fun send(packet: TunPacketCodec.Packet): Boolean {
+    fun send(packet: TunPacketCodec.Packet): Boolean {\n        if (packet.protocol == 17 && !UdpFlowValidator.validate(packet)) return false
         if (packet.protocol == 6) {\n            val key = TcpFlowStateTable.Key(packet.sourceIp, packet.sourcePort, packet.destinationIp, packet.destinationPort)\n            val segment = TcpSegmentParser.parse(packet) ?: return false\n            if (!tcpValidator.validate(key, segment)) return false\n        }\n\n        val result = coordinator.admit(packet)
         if (!result.allowed) return false
         if (!coordinator.openUpstream(packet)) {
