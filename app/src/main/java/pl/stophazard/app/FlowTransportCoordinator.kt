@@ -59,6 +59,19 @@ class FlowTransportCoordinator(
         }
     }
 
+    fun closeByKey(key: FlowTable.Key) {
+        registry.remove(key)
+        table.close(key)
+        if (key.protocol == 6) {
+            tcpStates.close(
+                TcpFlowStateTable.Key(
+                    key.sourceIp, key.sourcePort,
+                    key.destinationIp, key.destinationPort
+                )
+            )
+        }
+    }
+
     fun close(packet: TunPacketCodec.Packet) {
         val key = FlowTable.Key(
             packet.protocol,
