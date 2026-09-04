@@ -18,7 +18,7 @@ class DomainPolicyStore(context: Context) {
 
     fun addCustomDomain(domain: String): Boolean {
         val normalized = BlockedDomains.normalize(domain)
-        if (normalized.isBlank() || normalized.contains(" ")) return false
+        if (!isValidHostname(normalized)) return false
 
         val updated = getCustomBlockedDomains().toMutableSet().apply { add(normalized) }
         prefs.edit().putStringSet(KEY_CUSTOM_DOMAINS, updated).apply()
@@ -29,6 +29,16 @@ class DomainPolicyStore(context: Context) {
         val normalized = BlockedDomains.normalize(domain)
         val updated = getCustomBlockedDomains().toMutableSet().apply { remove(normalized) }
         prefs.edit().putStringSet(KEY_CUSTOM_DOMAINS, updated).apply()
+    }
+
+    private fun isValidHostname(host: String): Boolean {
+        if (host.isBlank() || host.length > 253 || host.startsWith(".") || host.endsWith(".")) return false
+        return host.split(".").all { label ->
+            label.isNotEmpty() && label.length <= 63 &&
+                label.firstOrNull()?.isLetterOrDigit() == true &&
+                label.lastOrNull()?.isLetterOrDigit() == true &&
+                label.all { it.isLetterOrDigit() || it == "-" }
+        }
     }
 
     companion object {
