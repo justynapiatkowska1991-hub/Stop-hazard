@@ -1,19 +1,34 @@
 package pl.stophazard.app
 
-class ProtectionController(
-    private val settingsStore: ProtectionSettingsStore
-) {
-    fun isEnabled(): Boolean = settingsStore.get().enabled
+import android.content.Context
+import android.content.Intent
+import android.net.VpnService
 
-    fun enable() = settingsStore.setEnabled(true)
+object ProtectionController {
+    private const val PREF="stop_hazard_settings"
+    private const val ENABLED="enabled"
 
-    fun disable() = settingsStore.setEnabled(false)
+    fun isEnabled(context:Context)=context.getSharedPreferences(PREF,Context.MODE_PRIVATE)
+        .getBoolean(ENABLED,true)
 
-    fun toggle(): Boolean {
-        val next = !isEnabled()
-        settingsStore.setEnabled(next)
-        return next
+    fun setEnabled(context:Context,enabled:Boolean) {
+        context.getSharedPreferences(PREF,Context.MODE_PRIVATE).edit()
+            .putBoolean(ENABLED,enabled).apply()
+        if(enabled) start(context) else stop(context)
     }
 
-    fun current(): ProtectionSettings = settingsStore.get()
+    fun start(context:Context) {
+        val permission=VpnService.prepare(context)
+        if(permission!=null) {
+            if(context is android.app.Activity)
+                context.startActivityForResult(permission,7001)
+            return
+        }
+        val intent=Intent(context,HazardVpnService::class.java)
+        context.startService(intent)
+    }
+
+    fun stop(context:Context) {
+        context.stopService(Intent(context,HazardVpnService::class.java))
+    }
 }
