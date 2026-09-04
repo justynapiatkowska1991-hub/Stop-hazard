@@ -12,6 +12,7 @@ import android.os.ParcelFileDescriptor
 class ProtectionVpnService : VpnService() {
     private var tun: ParcelFileDescriptor? = null
     private val state = VpnSessionState()
+    private val transportStatus = PacketTransportStatus()
     private var packetLoop: VpnPacketLoop? = null
     private var dnsMonitor: DnsPolicyMonitor? = null
 
@@ -25,9 +26,12 @@ class ProtectionVpnService : VpnService() {
         return START_STICKY
     }
 
+    fun transportSnapshot(): PacketTransportStatus.Snapshot = transportStatus.snapshot()
+
     private fun startVpn() {
         if (tun != null) return
         state.starting()
+        transportStatus.starting()
         try {
             tun = VpnConfiguration.build(Builder()).establish()
             if (tun == null) {
@@ -43,8 +47,10 @@ class ProtectionVpnService : VpnService() {
                 packet.isNotEmpty()
             }
             packetLoop?.start(tun!!)
+            transportStatus.degraded("tun-capture-active-forwarder-not-configured")
             state.running()
         } catch (e: Exception) {
+            transportStatus.error(e.message ?: "vpn-start-failed")
             state.error(e.message ?: "vpn-start-failed")
             tun?.close()
             tun = null
@@ -57,6 +63,7 @@ class ProtectionVpnService : VpnService() {
     fun dnsStats(): DnsPolicyMonitor.Stats? = dnsMonitor?.stats()
 
     private fun stopVpn() {
+        transportStatus.stopped()
         packetLoop?.stop()
         packetLoop = null
         dnsMonitor = null
