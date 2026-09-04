@@ -1,18 +1,17 @@
 # STOP HAZARD
 
-Android application focused on helping users block access to gambling websites and, in Premium, selected gambling apps.
+STOP HAZARD contains a web preview and an Android native protection prototype.
 
-## Product
-- Basic: 19.99 PLN/month
-- Premium: 29.99 PLN/month
-- Premium annual: 159 PLN/year
+## Native architecture
+- VpnService lifecycle
+- DNS question parsing
+- built-in and custom domain policy
+- local blocked-event history
+- local protection statistics
+- persistent settings
+- Android runtime VPN permission
 
-## Development priorities
-1. Reliable blocking architecture
-2. Battery-saver resilience
-3. Clear onboarding and subscription UX
-4. Trusted-person protection
-5. Google Play compliant billing and permissions
-6. Testing on multiple Android manufacturers
+## Production requirement
+A VPN interface by itself does not provide Internet forwarding. A production implementation must include a complete user-space IP/TUN stack or a properly integrated upstream tunnel/DNS proxy, plus IPv6 handling, TCP/UDP forwarding, encrypted-DNS policy, lifecycle recovery, battery considerations, and extensive device testing.
 
-> The repository is currently a fresh project scaffold. Blocking and billing will be implemented in subsequent milestones.
+The project therefore keeps the filtering policy separate from transport so the networking layer can be completed and tested without pretending that a partial prototype is a finished system-wide blocker.
