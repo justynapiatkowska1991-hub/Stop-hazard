@@ -12,7 +12,8 @@ class VpnFlowRuntime(
 
     private val upstream = UpstreamTransport()
     private val coordinator = FlowTransportCoordinator(policy, transport = upstream)
-    private val responseRouter = VpnResponseRouter(tunOutput)\n    private val tcpValidator = TcpFlowValidator()
+    private val responseRouter = VpnResponseRouter(tunOutput)
+    private val tcpValidator = TcpFlowValidator()
     private val receiveLoop = TransportReceiveLoop(
         transport = upstream,
         onTcpData = { key, data -> responseRouter.route(key, data) },
@@ -40,24 +41,46 @@ class VpnFlowRuntime(
         return result
     }
 
-    fun send(packet: TunPacketCodec.Packet): Boolean {\n        if (packet.protocol == 17 && !UdpFlowValidator.validate(packet)) return false
-        if (packet.protocol == 6) {\n            val key = TcpFlowStateTable.Key(packet.sourceIp, packet.sourcePort, packet.destinationIp, packet.destinationPort)\n            val segment = TcpSegmentParser.parse(packet) ?: return false\n            if (!tcpValidator.validate(key, segment)) return false\n        }\n\n        val result = coordinator.admit(packet)
+    fun send(packet: TunPacketCodec.Packet): Boolean {
+        if (packet.protocol == 17 && !UdpFlowValidator.validate(packet)) return false
+
+        if (packet.protocol == 6) {
+            val tcpKey = TcpFlowStateTable.Key(
+                packet.sourceIp, packet.sourcePort,
+                packet.destinationIp, packet.destinationPort
+            )
+            val segment = TcpSegmentParser.parse(packet) ?: return false
+            if (!tcpValidator.validate(tcpKey, segment)) return false
+        }
+
+        val result = coordinator.admit(packet)
         if (!result.allowed) return false
+
+        val key = packetKey(packet)
         if (!coordinator.openUpstream(packet)) {
             coordinator.close(packet)
+            tcpValidator.removeIfTcp(packet)
             return false
         }
+
         responseRouter.register(packet)
-        val key = packetKey(packet)
         if (packet.protocol == 6) receiveLoop.watchTcp(key)
         if (packet.protocol == 17) receiveLoop.watchUdp(key)
-        return true
+        return packet.payload.isEmpty() || TransportBridge(upstream).send(packet)
     }
 
     fun close(packet: TunPacketCodec.Packet) {
         val key = packetKey(packet)
         receiveLoop.stop(key)
         responseRouter.unregister(key)
+        if (packet.protocol == 6) {
+            tcpValidator.remove(
+                TcpFlowStateTable.Key(
+                    packet.sourceIp, packet.sourcePort,
+                    packet.destinationIp, packet.destinationPort
+                )
+            )
+        }
         coordinator.close(packet)
     }
 
