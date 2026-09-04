@@ -12,6 +12,8 @@ import android.os.ParcelFileDescriptor
 class ProtectionVpnService : VpnService() {
     private var tun: ParcelFileDescriptor? = null
     private val state = VpnSessionState()
+    private var packetLoop: VpnPacketLoop? = null
+    private var dnsMonitor: DnsPolicyMonitor? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
@@ -33,6 +35,14 @@ class ProtectionVpnService : VpnService() {
                 stopSelf()
                 return
             }
+            val policy = ProtectionManager(applicationContext).currentPolicy()
+            dnsMonitor = DnsPolicyMonitor(DnsQueryGate(DnsPolicyResolver(policy)))
+            packetLoop = VpnPacketLoop(state) { packet ->
+                // The packet loop is now connected to the native VPN lifecycle.
+                // Full IP forwarding remains a separate transport implementation.
+                packet.isNotEmpty()
+            }
+            packetLoop?.start(tun!!)
             state.running()
         } catch (e: Exception) {
             state.error(e.message ?: "vpn-start-failed")
@@ -42,7 +52,14 @@ class ProtectionVpnService : VpnService() {
         }
     }
 
+    fun sessionSnapshot(): VpnSessionState.Snapshot = state.snapshot()
+
+    fun dnsStats(): DnsPolicyMonitor.Stats? = dnsMonitor?.stats()
+
     private fun stopVpn() {
+        packetLoop?.stop()
+        packetLoop = null
+        dnsMonitor = null
         state.stopped()
         try { tun?.close() } catch (_: Exception) {}
         tun = null
