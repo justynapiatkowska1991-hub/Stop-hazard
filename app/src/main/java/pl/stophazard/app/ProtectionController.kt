@@ -13,13 +13,16 @@ class ProtectionController(private val context: Context) {
 
     fun prepareVpn(): Intent? = VpnService.prepare(context)
 
-    fun start() {
+    fun start(): Boolean {
+        val prepareIntent = VpnService.prepare(context)
+        if (prepareIntent != null) return false
         val intent = Intent(context, BlockingVpnService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             context.startForegroundService(intent)
         } else {
             context.startService(intent)
         }
+        return true
     }
 
     fun stop() {
