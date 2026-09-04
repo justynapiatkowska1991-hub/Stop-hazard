@@ -42,7 +42,7 @@ class FlowTransportCoordinator(
             tcpStates.open(key, tcpSequence(packet))
         }
 
-        return Result(true, "flow-admitted", admission.flow)
+        registry.register(FlowTable.Key(packet.protocol, packet.sourceIp, packet.sourcePort, packet.destinationIp, packet.destinationPort))\n        return Result(true, "flow-admitted", admission.flow)
     }
 
     fun openUpstream(packet: TunPacketCodec.Packet): Boolean {
@@ -53,8 +53,8 @@ class FlowTransportCoordinator(
         )
 
         return when (packet.protocol) {
-            6 -> transport.tcpHandle(key) != null || transport.openTcp(key) != null
-            17 -> transport.udpHandle(key) != null || transport.openUdp(key) != null
+            6 -> (transport.tcpHandle(key) != null || transport.openTcp(key) != null).also { if (it) registry.register(key) }
+            17 -> (transport.udpHandle(key) != null || transport.openUdp(key) != null).also { if (it) registry.register(key) }
             else -> false
         }
     }
