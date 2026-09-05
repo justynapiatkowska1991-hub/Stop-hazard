@@ -5,17 +5,17 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ProtectionEventTest {
-
     @Test
     fun blockedDomainEventKeepsHostname() {
-        val event = ProtectionEvent.DomainBlocked("bet365.com")
-        assertTrue(event is ProtectionEvent.DomainBlocked)
-        assertEquals("bet365.com", event.hostname)
+        val event = ProtectionEvent("bet365.com", true)
+        assertTrue(event.blocked)
+        assertEquals("bet365.com", event.host)
     }
 
     @Test
-    fun authorizationEventIsDistinct() {
-        val event = ProtectionEvent.VpnAuthorizationRequired
-        assertTrue(event is ProtectionEvent.VpnAuthorizationRequired)
+    fun protectionStateRepresentsEnabledState() {
+        val state = ProtectionState(enabled = true, tier = SubscriptionTier.BASIC)
+        assertTrue(state.enabled)
+        assertEquals(SubscriptionTier.BASIC, state.tier)
     }
 }
