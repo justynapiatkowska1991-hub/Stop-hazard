@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.net.VpnService
 import android.os.Bundle
+import android.provider.Settings
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -56,6 +57,14 @@ class MainActivity : Activity() {
         root.addView(subtitle)
         root.addView(status)
         root.addView(button)
+
+        val accessibilityButton = Button(this).apply {
+            text = "WŁĄCZ BLOKADĘ PRZEGLĄDARKI"
+            setOnClickListener {
+                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            }
+        }
+        root.addView(accessibilityButton)
         setContentView(root)
     }
 
