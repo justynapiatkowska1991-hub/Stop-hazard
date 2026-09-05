@@ -6,8 +6,11 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 import org.junit.Test
 
+@RunWith(RobolectricTestRunner::class)
 class DnsBlockEngineTest {
     private lateinit var stats: ProtectionStatsStore
 
