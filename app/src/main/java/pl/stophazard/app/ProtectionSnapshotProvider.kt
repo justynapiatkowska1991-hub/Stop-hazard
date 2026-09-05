@@ -5,7 +5,7 @@ import android.content.Context
 class ProtectionSnapshotProvider(context: Context) {
     private val appContext = context.applicationContext
     private val repository = ProtectionRepository(appContext)
-    private val controller = ProtectionController(appContext)
+    private val controller = ProtectionControllerFacade(appContext)
     private val statsStore = ProtectionStatsStore(appContext)
     private val domainStore = DomainPolicyStore(appContext)
 
