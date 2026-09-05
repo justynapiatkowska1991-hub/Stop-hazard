@@ -60,7 +60,6 @@ class FlowTransportCoordinator(
     }
 
     fun closeByKey(key: FlowTable.Key) {
-        registry.remove(key)
         table.close(key)
         if (key.protocol == 6) {
             tcpStates.close(
