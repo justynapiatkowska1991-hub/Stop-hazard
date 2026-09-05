@@ -53,7 +53,9 @@ class HazardVpnService : VpnService() {
             FileInputStream(vpn!!.fileDescriptor).use { input ->
                 FileOutputStream(vpn!!.fileDescriptor).use { output ->
                     val buffer = ByteArray(32767)
-                    val engine = ProtectionEngine(this)\n                    val policy = ProtectionManager(this@HazardVpnService).currentPolicy()\n                    val runtime = VpnFlowRuntime(policy, output)
+                    val engine = ProtectionEngine(this)
+                    val policy = ProtectionManager(this@HazardVpnService).currentPolicy()
+                    val runtime = VpnFlowRuntime(policy, output)
                     transport.degraded("upstream-forwarder-not-configured")
 
                     try {
