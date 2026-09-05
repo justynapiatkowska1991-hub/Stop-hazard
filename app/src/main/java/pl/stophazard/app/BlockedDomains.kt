@@ -8,6 +8,8 @@ object BlockedDomains {
         "betfair.com", "wincasino.io", "win-casino.io", "wincasino.com"
     )
 
+    fun domains(): Set<String> = domains
+
     fun isBlocked(host: String): Boolean {
         val normalized = host.lowercase().trimEnd('.')
         return domains.any { normalized == it || normalized.endsWith(".$it") }
