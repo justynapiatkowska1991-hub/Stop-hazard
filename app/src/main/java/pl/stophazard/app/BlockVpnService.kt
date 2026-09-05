@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
 import android.net.VpnService
+import android.net.ProxyInfo
 import android.os.Build
 import android.os.IBinder
 import android.os.ParcelFileDescriptor
@@ -20,6 +21,7 @@ import kotlin.concurrent.thread
 class BlockVpnService : VpnService() {
     @Volatile private var running = false
     private var vpnInterface: ParcelFileDescriptor? = null
+    private var httpProxy: BlockHttpProxy? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) stopProtection() else if (intent?.action == ACTION_START) startProtection()
@@ -38,9 +40,15 @@ class BlockVpnService : VpnService() {
         val builder = Builder()
             .setSession("STOP HAZARD")
             .setMtu(1500)
+            .setBlocking(true)
             .addAddress("10.0.0.2", 32)
             .addDnsServer("10.0.0.1")
             .addRoute("10.0.0.1", 32)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            httpProxy = BlockHttpProxy(this).also { it.start() }
+            builder.setHttpProxy(ProxyInfo.buildDirectProxy("127.0.0.1", BlockHttpProxy.PORT))
+        }
 
         // Route resolved IPs of blocked gambling domains into the VPN.
         // This also catches browsers using encrypted DNS/DoH.
@@ -219,6 +227,8 @@ class BlockVpnService : VpnService() {
         running = false
         try { vpnInterface?.close() } catch (_: Exception) {}
         vpnInterface = null
+        httpProxy?.stop()
+        httpProxy = null
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
@@ -227,6 +237,8 @@ class BlockVpnService : VpnService() {
         running = false
         try { vpnInterface?.close() } catch (_: Exception) {}
         vpnInterface = null
+        httpProxy?.stop()
+        httpProxy = null
         super.onDestroy()
     }
 
