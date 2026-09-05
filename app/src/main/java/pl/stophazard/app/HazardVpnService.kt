@@ -6,13 +6,6 @@ import android.os.ParcelFileDescriptor
 import java.io.FileInputStream
 import java.io.FileOutputStream
 
-/**
- * Single native VPN entry point.
- *
- * This service owns TUN lifecycle and DNS-policy decisions. It deliberately
- * does not discard arbitrary non-DNS packets: until an upstream IP forwarder
- * exists they are reported as transport-unavailable.
- */
 class HazardVpnService : VpnService() {
     private var vpn: ParcelFileDescriptor? = null
     @Volatile private var running = false
@@ -21,9 +14,7 @@ class HazardVpnService : VpnService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
-            stopVpn()
-            stopSelf()
-            return START_NOT_STICKY
+            stopVpn(); stopSelf(); return START_NOT_STICKY
         }
         if (!running) startVpn()
         return START_STICKY
@@ -32,12 +23,9 @@ class HazardVpnService : VpnService() {
     private fun startVpn() {
         session.starting()
         transport.starting()
-
         vpn = try {
             VpnConfiguration.build(Builder())
-                .setMtu(1500)
-                .addDnsServer("10.8.0.1")
-                .establish()
+                .setMtu(1500).addDnsServer("10.8.0.1").establish()
         } catch (_: Exception) { null }
 
         if (vpn == null) {
@@ -53,31 +41,26 @@ class HazardVpnService : VpnService() {
             FileInputStream(vpn!!.fileDescriptor).use { input ->
                 FileOutputStream(vpn!!.fileDescriptor).use { output ->
                     val buffer = ByteArray(32767)
-                    val engine = ProtectionEngine(this)
+                    val engine = ProtectionEngine(this@HazardVpnService)
                     val policy = ProtectionManager(this@HazardVpnService).currentPolicy()
                     val runtime = VpnFlowRuntime(policy, output)
                     transport.degraded("upstream-forwarder-not-configured")
-
                     try {
                         while (running) {
                             val n = input.read(buffer)
                             if (n <= 0) continue
                             session.packetRead()
-
                             val packet = buffer.copyOf(n)
                             val host = DnsPacket.readQuestionHost(packet)
-
                             if (host != null && engine.inspect(host)) {
                                 DnsResponse.nxdomain(packet)?.let {
-                                    output.write(it)
-                                    output.flush()
+                                    output.write(it); output.flush()
                                 }
                                 session.packetDropped()
                             } else {
                                 val decoded = TunPacketCodec.parse(packet)
                                 if (decoded != null && runtime.send(decoded)) {
-                                    session.packetForwarded()
-                                    transport.ready()
+                                    session.packetForwarded(); transport.ready()
                                 } else {
                                     session.packetDropped()
                                 }
@@ -89,6 +72,7 @@ class HazardVpnService : VpnService() {
                             transport.error(e.message ?: "vpn-loop-failed")
                         }
                     } finally {
+                        runtime.close()
                         ProtectionServiceState.setRunning(this@HazardVpnService, false)
                     }
                 }
@@ -98,7 +82,6 @@ class HazardVpnService : VpnService() {
             isDaemon = true
             start()
         }
-
         session.running()
     }
 
@@ -111,10 +94,7 @@ class HazardVpnService : VpnService() {
         ProtectionServiceState.setRunning(this, false)
     }
 
-    override fun onDestroy() {
-        stopVpn()
-        super.onDestroy()
-    }
+    override fun onDestroy() { stopVpn(); super.onDestroy() }
 
     companion object {
         const val ACTION_STOP = "pl.stophazard.app.STOP_VPN"
