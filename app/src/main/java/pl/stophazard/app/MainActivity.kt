@@ -1,22 +1,28 @@
 package pl.stophazard.app
 
 import android.app.Activity
-import android.os.Bundle
+import android.content.Intent
 import android.graphics.Color
-import android.view.Gravity
+import android.net.VpnService
+import android.os.Bundle
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 
 class MainActivity : Activity() {
+
     private lateinit var status: TextView
+    private lateinit var button: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        buildUi()
+    }
 
+    private fun buildUi() {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
+            gravity = android.view.Gravity.CENTER
             setPadding(40, 40, 40, 40)
         }
 
@@ -24,30 +30,26 @@ class MainActivity : Activity() {
             text = "STOP HAZARD"
             textSize = 30f
             setTextColor(Color.rgb(183, 28, 28))
-            gravity = Gravity.CENTER
+            gravity = android.view.Gravity.CENTER
         }
 
         val subtitle = TextView(this).apply {
             text = "Ochrona przed stronami hazardowymi"
             textSize = 18f
-            gravity = Gravity.CENTER
-            setPadding(0, 20, 0, 40)
+            gravity = android.view.Gravity.CENTER
+            setPadding(0, 20, 0, 35)
         }
 
         status = TextView(this).apply {
             text = "Ochrona jest wyłączona"
             textSize = 18f
-            gravity = Gravity.CENTER
+            gravity = android.view.Gravity.CENTER
             setPadding(0, 20, 0, 20)
         }
 
-        val button = Button(this).apply {
+        button = Button(this).apply {
             text = "WŁĄCZ OCHRONĘ"
-            setOnClickListener {
-                status.text = "Ochrona włączona — moduł blokowania zostanie dodany w kolejnym etapie."
-                this.text = "OCHRONA WŁĄCZONA"
-                isEnabled = false
-            }
+            setOnClickListener { requestOrStartVpn() }
         }
 
         root.addView(title)
@@ -55,5 +57,34 @@ class MainActivity : Activity() {
         root.addView(status)
         root.addView(button)
         setContentView(root)
+    }
+
+    private fun requestOrStartVpn() {
+        val intent = VpnService.prepare(this)
+        if (intent != null) {
+            startActivityForResult(intent, VPN_REQUEST_CODE)
+        } else {
+            startVpn()
+        }
+    }
+
+    private fun startVpn() {
+        val intent = Intent(this, BlockVpnService::class.java)
+            .setAction(BlockVpnService.ACTION_START)
+        startService(intent)
+        status.text = "Ochrona włączona"
+        button.text = "OCHRONA WŁĄCZONA"
+        button.isEnabled = false
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == VPN_REQUEST_CODE && resultCode == RESULT_OK) {
+            startVpn()
+        }
+    }
+
+    companion object {
+        private const val VPN_REQUEST_CODE = 1001
     }
 }
