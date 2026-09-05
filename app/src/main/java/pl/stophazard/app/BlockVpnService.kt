@@ -13,6 +13,7 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.net.DatagramPacket
 import java.net.DatagramSocket
+import java.net.InetAddress
 import java.net.InetSocketAddress
 import kotlin.concurrent.thread
 
@@ -34,17 +35,41 @@ class BlockVpnService : VpnService() {
             startForeground(NOTIFICATION_ID, notification())
         }
 
-        vpnInterface = Builder()
+        val builder = Builder()
             .setSession("STOP HAZARD")
             .setMtu(1500)
             .addAddress("10.0.0.2", 32)
             .addDnsServer("10.0.0.1")
             .addRoute("10.0.0.1", 32)
-            .establish()
+
+        // Route resolved IPs of blocked gambling domains into the VPN.
+        // This also catches browsers using encrypted DNS/DoH.
+        resolveBlockedIps().forEach { address ->
+            try {
+                if (address is java.net.Inet4Address) {
+                    builder.addRoute(address.hostAddress!!, 32)
+                } else if (address is java.net.Inet6Address) {
+                    builder.addRoute(address.hostAddress!!.substringBefore("%"), 128)
+                }
+            } catch (_: Exception) {}
+        }
+
+        vpnInterface = builder.establish()
 
         if (vpnInterface == null) { stopSelf(); return }
         running = true
         thread(name = "StopHazardDns") { loop() }
+    }
+
+    private fun resolveBlockedIps(): Set<InetAddress> {
+        val result = mutableSetOf<InetAddress>()
+        for (domain in BlockedDomains.domains()) {
+            try {
+                result.addAll(InetAddress.getAllByName(domain))
+                result.addAll(InetAddress.getAllByName("www.$domain"))
+            } catch (_: Exception) {}
+        }
+        return result
     }
 
     private fun loop() {
