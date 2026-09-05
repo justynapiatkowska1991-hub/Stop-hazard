@@ -1,5 +1,3 @@
-import org.gradle.api.tasks.compile.JavaCompile
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("com.android.application") version "8.7.3"
@@ -28,12 +26,3 @@ android {
     }
 }
 
-tasks.withType<JavaCompile>().configureEach {
-    options.release.set(17)
-}
-
-tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-}
