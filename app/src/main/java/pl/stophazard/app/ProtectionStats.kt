@@ -30,6 +30,10 @@ class ProtectionStatsStore(private val context: Context) {
             .putInt(KEY_ALLOWED, allowed).apply()
     }
 
+    fun reset() {
+        prefs.edit().clear().apply()
+    }
+
     companion object {
         private const val PREF = "stop_hazard_stats"
         private const val KEY_TOTAL = "total"
