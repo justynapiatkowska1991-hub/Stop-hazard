@@ -59,7 +59,7 @@ class VpnFlowRuntime(
         val key = packetKey(packet)
         if (!coordinator.openUpstream(packet)) {
             coordinator.close(packet)
-            tcpValidator.removeIfTcp(packet)
+            tcpValidator.remove(TcpFlowStateTable.Key(packet.sourceIp, packet.sourcePort, packet.destinationIp, packet.destinationPort))
             return false
         }
 
