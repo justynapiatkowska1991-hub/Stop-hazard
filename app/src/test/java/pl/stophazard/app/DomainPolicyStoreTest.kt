@@ -5,8 +5,11 @@ import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 import org.junit.Test
 
+@RunWith(RobolectricTestRunner::class)
 class DomainPolicyStoreTest {
 
     private lateinit var store: DomainPolicyStore
