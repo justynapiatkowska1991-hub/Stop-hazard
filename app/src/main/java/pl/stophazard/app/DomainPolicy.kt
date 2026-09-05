@@ -4,7 +4,9 @@ class DomainPolicy private constructor(
     private val repository: DomainRepository?,
     private val customDomains: Set<String>?
 ) {
+    constructor() : this(null, BlockedDomains.all())
     constructor(repository: DomainRepository) : this(repository, null)
+    constructor(repository: DomainRepository?, customDomains: Set<String>?) : this(repository, customDomains)
     constructor(customDomains: Set<String>) : this(null, customDomains)
 
     fun isBlocked(host: String): Boolean =
