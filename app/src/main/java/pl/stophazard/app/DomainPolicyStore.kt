@@ -51,7 +51,7 @@ class DomainPolicyStore(context: Context) {
                 label.length <= 63 &&
                 label.first().isLetterOrDigit() &&
                 label.last().isLetterOrDigit() &&
-                label.all { it.isLetterOrDigit() || it == "-" }
+                label.all { it.isLetterOrDigit() || it == '-' }
         }
     }
 
