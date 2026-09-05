@@ -81,8 +81,8 @@ object Ipv4PacketBuilder {
             i += 2
         }
         if (i < end) sum += (p[i].toInt() and 255) shl 8
-        while ((sum ushr 16) != 0) sum = (sum and 0xffff) + (sum ushr 16)
-        val result = sum.inv() and 0xffff
+        while ((sum ushr 16) != 0L) sum = (sum and 0xffffL) + (sum ushr 16)
+        val result = sum.inv() and 0xffffL
         return if (result == 0) 0xffff else result
     }
 
@@ -105,7 +105,7 @@ object Ipv4PacketBuilder {
         }
         if (i < end) sum += (p[i].toInt() and 255) shl 8
         while ((sum ushr 16) != 0) sum = (sum and 0xffff) + (sum ushr 16)
-        return sum.inv().toInt() and 0xffff
+        return (sum.inv() and 0xffffL).toInt()
     }
 
     private fun put16(p: ByteArray, i: Int, v: Int) {
