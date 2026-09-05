@@ -15,5 +15,5 @@ class ProtectionEngine(private val context:Context) {
 
     fun addCustomDomain(host:String)=policy.add(host)
     fun removeCustomDomain(host:String)=policy.remove(host)
-    fun customDomains():Set<String>=domains.getCustom()
+    fun customDomains(): Set<String> = domains.getCustom()
 }
