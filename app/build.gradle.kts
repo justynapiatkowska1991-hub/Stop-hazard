@@ -1,6 +1,6 @@
 plugins {
-    id("com.android.application") version "8.7.3"
-    id("org.jetbrains.kotlin.android") version "2.0.21"
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
@@ -12,7 +12,7 @@ android {
         minSdk = 26
         targetSdk = 35
         versionCode = 1
-        versionName = "1.0.0"
+        versionName = "0.1.0"
     }
 
     compileOptions {
@@ -20,17 +20,5 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    testOptions {
-        unitTests.isIncludeAndroidResources = true
-    }
-
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-}
-
-dependencies {
-    testImplementation("junit:junit:4.13.2")
-    testImplementation("androidx.test:core:1.6.1")
-    testImplementation("org.robolectric:robolectric:4.14.1")
+    kotlinOptions { jvmTarget = "17" }
 }
