@@ -60,7 +60,7 @@ class BlockHttpProxy(private val vpn: VpnService) {
                 val uri = java.net.URI(target)
                 val host = uri.host ?: headerHost(headers.toString()) ?: return
                 val port = if (uri.port > 0) uri.port else 80
-                "\${host}:\${port}"
+                "${host}:${port}"
             }
 
             val hp = hostPort.substringBeforeLast(":")
@@ -70,7 +70,7 @@ class BlockHttpProxy(private val vpn: VpnService) {
             if (BlockedDomains.isBlocked(hp)) {
                 val body = "STOP HAZARD\nTa strona hazardowa jest zablokowana."
                 val bytes = body.toByteArray()
-                output.write(("HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: \${bytes.size}\r\nConnection: close\r\n\r\n\$body").toByteArray())
+                output.write(("HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: ${bytes.size}\r\nConnection: close\r\n\r\n$body").toByteArray())
                 output.flush()
                 return
             }
@@ -85,7 +85,7 @@ class BlockHttpProxy(private val vpn: VpnService) {
                     output.flush()
                     relay(c, u)
                 } else {
-                    val first = "\$requestLine\r\n\$headers\r\n".toByteArray()
+                    val first = "$requestLine\r\n$headers\r\n".toByteArray()
                     u.getOutputStream().write(first)
                     u.getOutputStream().flush()
                     relay(c, u)
@@ -115,7 +115,7 @@ class BlockHttpProxy(private val vpn: VpnService) {
 
     private fun readLine(input: InputStream): String? {
         val b = ByteArrayOutputStream()
-        while (b.size < 8192) {
+        while (b.size() < 8192) {
             val ch = input.read()
             if (ch < 0) return null
             if (ch == 10) {
@@ -131,7 +131,10 @@ class BlockHttpProxy(private val vpn: VpnService) {
 
     private fun headerHost(headers: String): String? =
         headers.lineSequence().firstOrNull { it.startsWith("Host:", true) }
-            ?.substringAfter(":").trim()?.substringBefore(":")?.trim()
+            ?.substringAfter(":")
+            ?.trim()
+            ?.substringBefore(":")
+            ?.trim()
 
     companion object { const val PORT = 18080 }
 }
