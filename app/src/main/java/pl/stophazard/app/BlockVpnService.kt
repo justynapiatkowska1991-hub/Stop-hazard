@@ -28,7 +28,11 @@ class BlockVpnService : VpnService() {
     private fun startProtection() {
         if (running) return
         createChannel()
-        if (Build.VERSION.SDK_INT >= 26) startForeground(NOTIFICATION_ID, notification())
+        if (Build.VERSION.SDK_INT >= 29) {
+            startForeground(NOTIFICATION_ID, notification(), android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        } else if (Build.VERSION.SDK_INT >= 26) {
+            startForeground(NOTIFICATION_ID, notification())
+        }
 
         vpnInterface = Builder()
             .setSession("STOP HAZARD")
