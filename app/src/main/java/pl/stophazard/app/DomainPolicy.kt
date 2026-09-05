@@ -1,18 +1,18 @@
 package pl.stophazard.app
 
-class DomainPolicy(private val repository: DomainRepository) {
-    private val customDomains: Set<String>? = null
-    constructor(customDomains: Set<String>) : this(DomainRepositoryProxy(customDomains))
+class DomainPolicy private constructor(
+    private val repository: DomainRepository?,
+    private val customDomains: Set<String>?
+) {
+    constructor(repository: DomainRepository) : this(repository, null)
+    constructor(customDomains: Set<String>) : this(null, customDomains)
 
     fun isBlocked(host: String): Boolean =
-        repository.isBlocked(host)
+        customDomains?.let { BlockedDomains.isBlocked(host, it) }
+            ?: repository?.isBlocked(host)
+            ?: false
 
-    fun add(domain: String): Boolean = repository.add(domain)
-    fun remove(domain: String) = repository.remove(domain)
+    fun add(domain: String): Boolean = repository?.add(domain) ?: false
+    fun remove(domain: String) { repository?.remove(domain) }
     fun shouldBlock(host: String): Boolean = isBlocked(host)
-
-    private class DomainRepositoryProxy(private val domains: Set<String>) : DomainRepositoryProxyBase()
-    private open class DomainRepositoryProxyBase {
-        fun isBlocked(host: String): Boolean = BlockedDomains.isBlocked(host, emptySet())
-    }
 }
