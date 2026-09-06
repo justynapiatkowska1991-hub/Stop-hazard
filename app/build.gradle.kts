@@ -1,9 +1,6 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    dependencies {
-        implementation("com.zaneschepke:hevtunnel:1.0.1")
-    }
 }
 
 android {
@@ -32,3 +29,7 @@ android {
     ndkVersion = "27.0.12077973"
 }
 
+
+dependencies {
+    implementation("com.zaneschepke:hevtunnel:1.0.1")
+}
