@@ -15,8 +15,16 @@ object BlockedDomains {
 
     fun domains(): Set<String> = domains
 
+    fun normalize(host: String): String =
+        host.lowercase().trim().trimEnd('.').removePrefix("www.")
+
     fun isBlocked(host: String): Boolean {
-        val normalized = host.lowercase().trimEnd('.')
+        val normalized = normalize(host)
         return domains.any { normalized == it || normalized.endsWith(".$it") }
     }
+
+    fun decision(host: String): BlockDecision =
+        if (isBlocked(host)) BlockDecision.BLOCK else BlockDecision.ALLOW
 }
+
+enum class BlockDecision { BLOCK, ALLOW }
