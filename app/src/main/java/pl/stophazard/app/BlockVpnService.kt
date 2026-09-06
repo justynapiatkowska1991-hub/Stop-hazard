@@ -47,16 +47,11 @@ class BlockVpnService : VpnService() {
         val builder = Builder()
             .setSession("STOP HAZARD")
             .setMtu(1500)
-
-            // Adres naszego wirtualnego interfejsu.
             .addAddress("10.0.0.2", 32)
-
-            // Kierujemy cały IPv4 przez VPN.
-            .addRoute("0.0.0.0", 0)
-
-            // DNS używany przez interfejs VPN.
             .addDnsServer("1.1.1.1")
 
+        // Nie kierujemy całego Internetu do TUN.
+        // Pełny routing bez forwardera pakietów odcina połączenie.
         vpnInterface = builder.establish()
 
         if (vpnInterface == null) {
@@ -65,66 +60,19 @@ class BlockVpnService : VpnService() {
 
         running.set(true)
 
-        packetThread = thread(
-            name = "StopHazard-TUN"
-        ) {
+        packetThread = thread(name = "StopHazard-TUN") {
             readPackets()
         }
     }
 
     private fun readPackets() {
-
-        val descriptor = vpnInterface ?: return
-
-        try {
-
-            FileInputStream(
-                descriptor.fileDescriptor
-            ).use { input ->
-
-                val buffer = ByteArray(32767)
-
-                while (running.get()) {
-
-                    val length = input.read(buffer)
-
-                    if (length <= 0) {
-                        break
-                    }
-
-                    /*
-                     * WAŻNE:
-                     *
-                     * Tutaj otrzymujemy rzeczywiste pakiety
-                     * wychodzące z telefonu.
-                     *
-                     * Na tym etapie NIE przekazujemy ich jeszcze
-                     * do Internetu.
-                     *
-                     * Następny etap:
-                     *
-                     * TUN -> parser IP -> TCP/UDP -> tun2socks
-                     *
-                     * Dopiero tam będzie można zrobić rzeczywiste
-                     * blokowanie ruchu.
-                     */
-
-                    android.util.Log.d(
-                        "STOP_HAZARD",
-                        "Odebrano pakiet TUN: $length bajtów"
-                    )
-                }
-            }
-
-        } catch (e: Exception) {
-
-            if (running.get()) {
-
-                android.util.Log.e(
-                    "STOP_HAZARD",
-                    "Błąd TUN",
-                    e
-                )
+        // Tymczasowo nie czytamy TUN. W kolejnym etapie dodamy selektywne
+        // blokowanie DNS, bez przejmowania całego ruchu internetowego.
+        while (running.get()) {
+            try {
+                Thread.sleep(1000)
+            } catch (_: InterruptedException) {
+                break
             }
         }
     }
