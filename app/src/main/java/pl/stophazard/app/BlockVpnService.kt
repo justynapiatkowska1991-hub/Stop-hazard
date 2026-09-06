@@ -13,6 +13,10 @@ import kotlin.concurrent.thread
 
 class BlockVpnService : VpnService() {
 
+    companion object {
+        const val ACTION_START = "pl.stophazard.app.action.START"
+    }
+
     private var vpnInterface: ParcelFileDescriptor? = null
     private val running = AtomicBoolean(false)
     private var packetThread: Thread? = null
