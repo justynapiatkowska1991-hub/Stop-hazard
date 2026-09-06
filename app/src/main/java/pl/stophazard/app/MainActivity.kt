@@ -60,7 +60,7 @@ class MainActivity : Activity() {
         }
 
         val info = TextView(this).apply {
-            text = "STOP HAZARD używa lokalnego VPN do filtrowania domen hazardowych. Zwykły Internet pozostaje dostępny."
+            text = "Dodatkowa ochrona wykrywa adresy stron hazardowych w przeglądarkach i pokazuje ekran blokady. Zwykły Internet pozostaje dostępny."
             textSize = 15f
             gravity = android.view.Gravity.CENTER
             setPadding(0, 25, 0, 10)
@@ -72,13 +72,13 @@ class MainActivity : Activity() {
         root.addView(protectionButton)
 
         val accessibilityButton = Button(this).apply {
-            text = "WŁĄCZ DODATKOWĄ BLOKADĘ"
+            text = "WŁĄCZ DODATKOWĄ OCHRONĘ"
             setOnClickListener {
                 try {
                     startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                     Toast.makeText(
                         this@MainActivity,
-                        "W ustawieniach Dostępność wybierz STOP HAZARD i włącz usługę.",
+                        "W Dostępności wybierz STOP HAZARD i włącz usługę. To uruchomi dodatkową blokadę stron.",
                         Toast.LENGTH_LONG
                     ).show()
                 } catch (_: Exception) {
