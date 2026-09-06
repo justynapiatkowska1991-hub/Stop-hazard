@@ -43,12 +43,13 @@ class BlockVpnService : VpnService() {
             .setSession("STOP HAZARD")
             .setMtu(1500)
             .addAddress("10.0.0.2", 32)
-            .addRoute("10.0.0.1", 32)
-            .addDnsServer("10.0.0.1")
+            .addRoute("1.1.1.1", 32)
+            .addRoute("1.0.0.1", 32)
+            .addDnsServer("1.1.1.1")
+            .addDnsServer("1.0.0.1")
             .setBlocking(false)
-            // Tylko DNS trafia do naszego wirtualnego resolvera.
-            // Nie dodajemy trasy 0.0.0.0/0, więc zwykły ruch nie jest
-            // przejmowany przez TUN i nie może zostać przypadkowo odcięty.
+            // Przejmujemy wyłącznie ruch DNS do rzeczywistych resolverów.
+            // Zwykły ruch internetowy nie jest kierowany przez TUN.
 
         vpnInterface = builder.establish()
             ?: throw IllegalStateException("Nie udało się utworzyć interfejsu VPN")
