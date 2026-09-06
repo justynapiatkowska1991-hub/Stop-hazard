@@ -21,8 +21,9 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Android NDK
-        run: sdkmanager "ndk;27.2.12479018"
+      - name: Install legacy Android build tools required by tun2socks
+        run: |
+          sdkmanager "ndk;23.1.7779620" "cmake;3.10.2"
 
       - name: Clone tun2socks Android library
         run: git clone --depth 1 https://github.com/hiFrankYoung/tun2socks-android.git tun2socks-source
@@ -42,10 +43,7 @@ jobs:
           rm -rf app/src/main/jniLibs
           mkdir -p app/src/main/jniLibs
           cp -R "$SRC"/. app/src/main/jniLibs/
-          test -f app/src/main/jniLibs/arm64-v8a/libtun2socks.so || {
-            echo "Missing arm64-v8a/libtun2socks.so"
-            exit 1
-          }
+          test -f app/src/main/jniLibs/arm64-v8a/libtun2socks.so
 
       - name: Build debug APK
         run: |
