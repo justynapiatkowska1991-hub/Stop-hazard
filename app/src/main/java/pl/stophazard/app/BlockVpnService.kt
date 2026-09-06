@@ -58,7 +58,7 @@ class BlockVpnService : VpnService() {
             .setMtu(1500)
             .addAddress("10.0.0.2", 32)
             .addDnsServer("1.1.1.1")
-            .addRoute("0.0.0.0", 0)
+            .addRoute("1.1.1.1", 32)
 
         // Nie kierujemy całego Internetu do TUN.
         // Pełny routing bez forwardera pakietów odcina połączenie.
