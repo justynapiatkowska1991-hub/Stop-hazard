@@ -41,6 +41,7 @@ class BlockVpnService : VpnService() {
         }
 
         startForegroundNotification()
+        BlockedDomains.refreshFromOfficialRegistry()
 
         try {
             startVpn()
