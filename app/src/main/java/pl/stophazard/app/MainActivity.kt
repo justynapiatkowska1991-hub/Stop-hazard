@@ -2,16 +2,15 @@ package pl.stophazard.app
 
 import android.app.Activity
 import android.graphics.Color
+import android.net.VpnService
 import android.os.Bundle
-import android.provider.Settings
 import android.content.Intent
-import android.widget.Toast
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 
 class MainActivity : Activity() {
-
     private lateinit var status: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,28 +40,26 @@ class MainActivity : Activity() {
         }
 
         status = TextView(this).apply {
-            text = "Włącz blokadę stron hazardowych poniżej"
+            text = "Ochrona jest wyłączona"
             textSize = 18f
             gravity = android.view.Gravity.CENTER
             setPadding(0, 20, 0, 20)
         }
 
-        val accessibilityButton = Button(this).apply {
-            text = "WŁĄCZ BLOKADĘ"
-            isEnabled = true
-            isClickable = true
+        val protectionButton = Button(this).apply {
+            text = "WŁĄCZ OCHRONĘ"
             setOnClickListener {
-                try {
-                    Toast.makeText(this@MainActivity, "Otwieram ustawienia Usług ułatwień dostępu…", Toast.LENGTH_SHORT).show()
-                    startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                } catch (e: Exception) {
-                    Toast.makeText(this@MainActivity, "Otwórz Ustawienia telefonu → Ułatwienia dostępu.", Toast.LENGTH_LONG).show()
+                val intent = VpnService.prepare(this@MainActivity)
+                if (intent != null) {
+                    startActivityForResult(intent, VPN_REQUEST_CODE)
+                } else {
+                    startProtection()
                 }
             }
         }
 
         val info = TextView(this).apply {
-            text = "STOP HAZARD nie uruchamia już VPN. Dzięki temu zwykły Internet, poczta i inne strony nie są odcinane."
+            text = "STOP HAZARD używa lokalnego VPN do filtrowania domen hazardowych. Zwykły Internet pozostaje dostępny."
             textSize = 15f
             gravity = android.view.Gravity.CENTER
             setPadding(0, 25, 0, 10)
@@ -71,13 +68,36 @@ class MainActivity : Activity() {
         root.addView(title)
         root.addView(subtitle)
         root.addView(status)
-        root.addView(accessibilityButton)
+        root.addView(protectionButton)
         root.addView(info)
         setContentView(root)
     }
 
-    override fun onResume() {
-        super.onResume()
-        status.text = "Blokada działa przez Usługi ułatwień dostępu"
+    private fun startProtection() {
+        val intent = Intent(this, BlockVpnService::class.java).apply {
+            action = BlockVpnService.ACTION_START
+        }
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            startForegroundService(intent)
+        } else {
+            startService(intent)
+        }
+        status.text = "Ochrona VPN jest aktywna"
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == VPN_REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                startProtection()
+            } else {
+                status.text = "Ochrona VPN nie została włączona"
+                Toast.makeText(this, "Zezwól na połączenie VPN, aby włączyć ochronę.", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    companion object {
+        private const val VPN_REQUEST_CODE = 1001
     }
 }
