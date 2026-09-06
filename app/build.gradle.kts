@@ -30,5 +30,5 @@ android {
 }
 
 dependencies {
-    implementation("com.zaneschepke:hevtunnel:1.0.1")
+    implementation(files("libs/tun2socks-release.aar"))
 }
