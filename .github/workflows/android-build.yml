@@ -45,6 +45,13 @@ jobs:
           chmod +x gradlew
           ./gradlew --no-daemon :tun2socks:assembleRelease
 
+      - name: Copy tun2socks AAR into app
+        run: |
+          set -eux
+          mkdir -p app/libs
+          cp tun2socks-source/tun2socks/build/outputs/aar/tun2socks-release.aar app/libs/
+          test -f app/libs/tun2socks-release.aar
+
       - name: Copy real tun2socks native libraries into app
         run: |
           set -eux
