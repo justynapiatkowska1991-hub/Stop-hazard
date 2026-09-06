@@ -1,6 +1,9 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    dependencies {
+        implementation("com.zaneschepke:hevtunnel:1.0.1")
+    }
 }
 
 android {
@@ -21,5 +24,11 @@ android {
     }
 
     kotlinOptions { jvmTarget = "17" }
+
+    packaging {
+        jniLibs { useLegacyPackaging = false }
+    }
+
+    ndkVersion = "27.0.12077973"
 }
 
