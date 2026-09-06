@@ -54,6 +54,7 @@ class BlockVpnService : VpnService() {
             .setMtu(1500)
             .addAddress("10.0.0.2", 32)
             .addDnsServer("1.1.1.1")
+            .setBlocking(false)
             // Kierujemy przez VPN tylko ruch DNS. Nie dodajemy trasy 0.0.0.0/0,
             // bo bez pełnego forwardera pakiety WWW zostałyby odcięte od Internetu.
             // Przechwytuj popularne serwery DNS, aby ich zapytania trafiały do naszego filtra.
