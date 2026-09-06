@@ -23,6 +23,18 @@ jobs:
         with:
           gradle-version: '8.10.2'
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install NDK
+        run: sdkmanager "ndk;27.2.12479018"
+
+      - name: Prepare tun2socks source
+        run: git clone --depth 1 https://github.com/mokhtarabadi/universal-android-tun2socks.git tun2socks-source
+
+      - name: Check tun2socks source
+        run: test -d tun2socks-source && find tun2socks-source -maxdepth 2 -type f | head -50
+
       - name: Build debug APK
         run: gradle assembleDebug
 
