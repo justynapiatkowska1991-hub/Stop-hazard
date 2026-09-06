@@ -23,6 +23,3 @@ android {
     kotlinOptions { jvmTarget = "17" }
 }
 
-dependencies {
-    implementation("com.zaneschepke:hevtunnel:1.0.1")
-}
