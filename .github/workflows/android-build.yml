@@ -18,25 +18,44 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6
-        with:
-          gradle-version: '8.10.2'
-
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install NDK
+      - name: Install Android NDK
         run: sdkmanager "ndk;27.2.12479018"
 
-      - name: Prepare tun2socks source
-        run: git clone --depth 1 https://github.com/mokhtarabadi/universal-android-tun2socks.git tun2socks-source
+      - name: Clone tun2socks Android library
+        run: git clone --depth 1 https://github.com/hiFrankYoung/tun2socks-android.git tun2socks-source
 
-      - name: Check tun2socks source
-        run: test -d tun2socks-source && find tun2socks-source -maxdepth 2 -type f | head -50
+      - name: Build tun2socks AAR
+        working-directory: tun2socks-source
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon :tun2socks:assembleRelease
+
+      - name: Copy real tun2socks native libraries into app
+        run: |
+          set -eux
+          SRC=tun2socks-source/tun2socks/build/intermediates/stripped_native_libs/release/out/lib
+          test -d "$SRC"
+          find "$SRC" -type f -name '*.so' -print
+          rm -rf app/src/main/jniLibs
+          mkdir -p app/src/main/jniLibs
+          cp -R "$SRC"/. app/src/main/jniLibs/
+          test -f app/src/main/jniLibs/arm64-v8a/libtun2socks.so || {
+            echo "Missing arm64-v8a/libtun2socks.so"
+            exit 1
+          }
 
       - name: Build debug APK
-        run: gradle assembleDebug
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleDebug
+
+      - name: Verify tun2socks is packaged
+        run: |
+          unzip -l app/build/outputs/apk/debug/app-debug.apk | grep -E 'lib/.*/libtun2socks\.so'
+          test $(unzip -l app/build/outputs/apk/debug/app-debug.apk | grep -c 'libtun2socks\.so') -ge 1
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
