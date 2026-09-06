@@ -46,11 +46,11 @@ class BlockVpnService : VpnService() {
             .addDnsServer("1.1.1.1")
             .addDnsServer("1.0.0.1")
             .setBlocking(false)
-            // Pełny routing przez VPN jest konieczny, aby aplikacje
-            // nie omijały filtra przez własne trasy DNS.
-            // Zwykły ruch jest NAT-owany/przekazywany przez usługę,
-            // a tylko rozpoznane domeny hazardowe są odrzucane.
-            .addRoute("0.0.0.0", 0)
+            // Przechwytujemy wyłącznie ruch DNS do serwerów,
+            // który obsługujemy poniżej. Nie przejmujemy całego internetu,
+            // ponieważ usługa nie jest jeszcze pełnym forwarderem TCP/UDP.
+            .addRoute("1.1.1.1", 32)
+            .addRoute("1.0.0.1", 32)
 
         vpnInterface = builder.establish()
             ?: throw IllegalStateException("Nie udało się utworzyć interfejsu VPN")
