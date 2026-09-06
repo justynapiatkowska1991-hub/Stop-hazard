@@ -38,13 +38,10 @@ class BlockVpnService : VpnService() {
         startForegroundNotification()
         BlockedDomains.refreshFromOfficialRegistry()
 
-        try {
-            startVpn()
-        } catch (e: Exception) {
-            stopVpn()
-        }
-
-        return START_STICKY
+        // AccessibilityService jest obecnie bezpiecznym mechanizmem blokowania.
+        // Nie uruchamiamy eksperymentalnego routingu VPN, który mógłby odciąć Internet.
+        stopVpn()
+        return START_NOT_STICKY
     }
 
     private fun startVpn() {
