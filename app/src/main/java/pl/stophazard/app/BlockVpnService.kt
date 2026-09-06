@@ -59,7 +59,13 @@ class BlockVpnService : VpnService() {
             .setMtu(1500)
             .addAddress("10.0.0.2", 32)
             .addDnsServer("1.1.1.1")
+            // Przechwytuj popularne serwery DNS, aby ich zapytania trafiały do naszego filtra.
             .addRoute("1.1.1.1", 32)
+            .addRoute("1.0.0.1", 32)
+            .addRoute("8.8.8.8", 32)
+            .addRoute("8.8.4.4", 32)
+            .addRoute("9.9.9.9", 32)
+            .addRoute("149.112.112.112", 32)
 
         // Nie kierujemy całego Internetu do TUN.
         // Pełny routing bez forwardera pakietów odcina połączenie.
