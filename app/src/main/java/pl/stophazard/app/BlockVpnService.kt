@@ -7,17 +7,15 @@ import android.content.Intent
 import android.net.VpnService
 import android.os.Build
 import android.os.ParcelFileDescriptor
-import cc.hev.socks5.tunnel.HevSocks5Tunnel
-import cc.hev.socks5.tunnel.TunnelConfig
-import cc.hev.socks5.tunnel.TunnelException
+import com.LondonX.tun2socks.Tun2Socks
 import java.net.Socket
 import java.util.concurrent.atomic.AtomicBoolean
 
 class BlockVpnService : VpnService() {
 
     private var vpnInterface: ParcelFileDescriptor? = null
-    private var tunnel: HevSocks5Tunnel? = null
     private var socks5: LocalSocks5Server? = null
+    private var tunnelThread: Thread? = null
     private val running = AtomicBoolean(false)
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -38,8 +36,6 @@ class BlockVpnService : VpnService() {
     private fun startVpn() {
         if (vpnInterface != null) return
 
-        // Local SOCKS5 is the controlled upstream. Its outbound sockets are
-        // protected by this VpnService, so they bypass the VPN and avoid loops.
         socks5 = LocalSocks5Server(
             protectSocket = { socket: Socket -> protect(socket) },
             isBlocked = { host -> BlockedDomains.isBlocked(host) }
@@ -49,9 +45,7 @@ class BlockVpnService : VpnService() {
             .setSession("STOP HAZARD")
             .setMtu(1500)
             .addAddress("10.0.0.2", 24)
-            .addAddress("fd00:stop:hazard::2", 64)
             .addRoute("0.0.0.0", 0)
-            .addRoute("::", 0)
             .addDnsServer("1.1.1.1")
             .addDnsServer("1.0.0.1")
             .setBlocking(false)
@@ -59,34 +53,48 @@ class BlockVpnService : VpnService() {
         vpnInterface = builder.establish()
             ?: throw IllegalStateException("Nie udało się utworzyć interfejsu VPN")
 
-        val config = TunnelConfig.Builder()
-            .setSocks5Address("127.0.0.1")
-            .setSocks5Port(LocalSocks5Server.PORT)
-            .setTunMtu(1500)
-            .setTunIPv4Address("10.0.0.2")
-            .setTunIPv4Gateway("10.0.0.1")
-            .setTunIPv6Address("fd00:stop:hazard::2")
-            .setTunIPv6Gateway("fd00:stop:hazard::1")
-            .addDnsServer("1.1.1.1")
-            .addDnsServer("1.0.0.1")
-            .build()
-
-        try {
-            tunnel = HevSocks5Tunnel().also {
-                it.startAsync(config, vpnInterface!!.fileDescriptor)
-            }
-        } catch (e: TunnelException) {
-            throw IllegalStateException("Nie udało się uruchomić silnika tun2socks", e)
-        }
+        Tun2Socks.initialize(applicationContext)
 
         running.set(true)
+
+        val tun = vpnInterface ?: throw IllegalStateException("Brak interfejsu VPN")
+        val socksPort = LocalSocks5Server.PORT
+
+        tunnelThread = Thread {
+            try {
+                val ok = Tun2Socks.startTun2Socks(
+                    Tun2Socks.LogLevel.INFO,
+                    tun,
+                    1500,
+                    "127.0.0.1",
+                    socksPort,
+                    "10.0.0.2",
+                    null,
+                    "255.255.255.0",
+                    false,
+                    emptyList()
+                )
+
+                if (!ok && running.get()) {
+                    stopVpn()
+                }
+            } catch (_: Exception) {
+                if (running.get()) {
+                    stopVpn()
+                }
+            }
+        }.apply {
+            name = "stop-hazard-tun2socks"
+            start()
+        }
     }
 
     private fun stopVpn() {
         running.set(false)
 
-        try { tunnel?.stop() } catch (_: Exception) {}
-        tunnel = null
+        try { Tun2Socks.stopTun2Socks() } catch (_: Exception) {}
+
+        tunnelThread = null
 
         try { socks5?.stop() } catch (_: Exception) {}
         socks5 = null
