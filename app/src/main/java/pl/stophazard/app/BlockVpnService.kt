@@ -51,6 +51,8 @@ class BlockVpnService : VpnService() {
             // Przejmujemy wyłącznie ruch DNS do rzeczywistych resolverów.
             // Zwykły ruch internetowy nie jest kierowany przez TUN.
 
+        // DNS upstream is protected in forwardDns() so it bypasses this VPN.
+        // Establish the TUN only after the service has been prepared by Android.
         vpnInterface = builder.establish()
             ?: throw IllegalStateException("Nie udało się utworzyć interfejsu VPN")
 
@@ -138,7 +140,7 @@ class BlockVpnService : VpnService() {
     private fun forwardDns(query: ByteArray): ByteArray? {
         return try {
             DatagramSocket().use { socket ->
-                protect(socket)
+                if (!protect(socket)) return null
                 socket.soTimeout = 2000
 
                 val target = InetSocketAddress("1.1.1.1", 53)
@@ -237,6 +239,11 @@ class BlockVpnService : VpnService() {
 
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
+    }
+
+    override fun onRevoke() {
+        stopVpn()
+        super.onRevoke()
     }
 
     override fun onDestroy() {
