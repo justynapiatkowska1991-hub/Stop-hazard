@@ -21,16 +21,23 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Android NDK and CMake
+      - name: Install Android NDK and system CMake
         run: |
-          sdkmanager "ndk;23.1.7779620" "cmake;3.22.1"
+          sdkmanager "ndk;23.1.7779620"
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build
+          cmake --version
 
       - name: Clone tun2socks Android library
         run: git clone --depth 1 https://github.com/hiFrankYoung/tun2socks-android.git tun2socks-source
 
-      - name: Use installed CMake version
+      - name: Configure tun2socks to use runner CMake
         working-directory: tun2socks-source
-        run: sed -i 's/version "3.10.2"/version "3.22.1"/' tun2socks/build.gradle
+        run: |
+          sed -i '/version "3.10.2"/d' tun2socks/build.gradle
+          printf 'sdk.dir=%s\n' "$ANDROID_SDK_ROOT" > local.properties
+          printf 'cmake.dir=%s\n' "$(dirname "$(dirname "$(readlink -f "$(command -v cmake)")")")" >> local.properties
+          cat local.properties
 
       - name: Build tun2socks AAR
         working-directory: tun2socks-source
