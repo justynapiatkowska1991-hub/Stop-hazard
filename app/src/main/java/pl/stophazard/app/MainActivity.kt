@@ -8,6 +8,7 @@ import android.content.Intent
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.provider.Settings
 import android.widget.Toast
 
 class MainActivity : Activity() {
@@ -69,6 +70,28 @@ class MainActivity : Activity() {
         root.addView(subtitle)
         root.addView(status)
         root.addView(protectionButton)
+
+        val accessibilityButton = Button(this).apply {
+            text = "WŁĄCZ DODATKOWĄ BLOKADĘ"
+            setOnClickListener {
+                try {
+                    startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                    Toast.makeText(
+                        this@MainActivity,
+                        "W ustawieniach Dostępność wybierz STOP HAZARD i włącz usługę.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                } catch (_: Exception) {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Nie udało się otworzyć ustawień Dostępność.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
+
+        root.addView(accessibilityButton)
         root.addView(info)
         setContentView(root)
     }
