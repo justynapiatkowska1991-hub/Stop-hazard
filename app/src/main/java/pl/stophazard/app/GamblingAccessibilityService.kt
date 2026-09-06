@@ -59,21 +59,18 @@ class GamblingAccessibilityService : AccessibilityService() {
     }
 
     private fun findBlockedHost(raw: String): String? {
-        val normalized = raw.lowercase()
-        val direct = BlockedDomains.domains().firstOrNull {
-            normalized.contains(it)
-        }
-        if (direct != null) return direct
-
+        // Blokujemy wyłącznie rzeczywisty adres domeny, a nie samo słowo
+        // występujące w treści zwykłej strony.
         val urls = Regex(
-            """(?i)(?:https?://)?(?:www\.)?([a-z0-9.-]+\.[a-z]{2,})(?:[/?:#\s]|$)"""
+            """(?i)(?:https?://)?(?:www\.)?([a-z0-9][a-z0-9.-]*\.[a-z]{2,})(?:[/?:#\s]|$)"""
         ).findAll(raw)
 
         for (match in urls) {
             val host = match.groupValues[1]
-            if (BlockedDomains.isBlocked(host)) return BlockedDomains.normalize(host)
+            if (BlockedDomains.isBlocked(host)) {
+                return BlockedDomains.normalize(host)
+            }
         }
-
         return null
     }
 
