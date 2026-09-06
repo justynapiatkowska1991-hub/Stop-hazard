@@ -19,11 +19,6 @@ class BlockVpnService : VpnService() {
 
     companion object {
         const val ACTION_START = "pl.stophazard.app.action.START"
-        private val BLOCKED_DOMAINS = setOf(
-            "bet365.com", "betway.com", "888.com", "williamhill.com",
-            "unibet.com", "bwin.com", "betfair.com", "sportingbet.com",
-            "superbet.pl", "fortuna.pl", "sts.pl", "betters.pl", "forbet.pl"
-        )
     }
 
     private var vpnInterface: ParcelFileDescriptor? = null
@@ -106,7 +101,7 @@ class BlockVpnService : VpnService() {
         if (dstPort != 53) return
         val dns = packet.copyOfRange(ihl + 8, length)
         val domain = readDnsName(dns) ?: return
-        val blocked = BLOCKED_DOMAINS.any { domain == it || domain.endsWith("." + it) }
+        val blocked = BlockedDomains.isBlocked(domain)
         val response = if (blocked) blockedResponse(dns) else forwardDns(dns)
         if (response != null) writeResponse(packet, ihl, response, output)
     }
