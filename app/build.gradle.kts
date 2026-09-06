@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "pl.stophazard.app"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "pl.stophazard.app"
@@ -28,7 +28,6 @@ android {
 
     ndkVersion = "27.0.12077973"
 }
-
 
 dependencies {
     implementation("com.zaneschepke:hevtunnel:1.0.1")
