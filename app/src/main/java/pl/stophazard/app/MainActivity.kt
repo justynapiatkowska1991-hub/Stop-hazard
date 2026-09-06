@@ -5,6 +5,7 @@ import android.graphics.Color
 import android.os.Bundle
 import android.provider.Settings
 import android.content.Intent
+import android.widget.Toast
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -48,8 +49,15 @@ class MainActivity : Activity() {
 
         val accessibilityButton = Button(this).apply {
             text = "WŁĄCZ BLOKADĘ"
+            isEnabled = true
+            isClickable = true
             setOnClickListener {
-                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                try {
+                    Toast.makeText(this@MainActivity, "Otwieram ustawienia Usług ułatwień dostępu…", Toast.LENGTH_SHORT).show()
+                    startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                } catch (e: Exception) {
+                    Toast.makeText(this@MainActivity, "Otwórz Ustawienia telefonu → Ułatwienia dostępu.", Toast.LENGTH_LONG).show()
+                }
             }
         }
 
