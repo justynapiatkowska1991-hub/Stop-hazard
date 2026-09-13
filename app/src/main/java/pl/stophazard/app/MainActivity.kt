@@ -49,9 +49,12 @@ class MainActivity : Activity() {
 
         val protectButton = Button(this).apply {
             text = "WŁĄCZ OCHRONĘ"
-            setOnClickListener {
-                startProtection()
-            }
+            setOnClickListener { startProtection() }
+        }
+
+        val stopButton = Button(this).apply {
+            text = "WYŁĄCZ OCHRONĘ"
+            setOnClickListener { stopProtection() }
         }
 
         val accessibilityButton = Button(this).apply {
@@ -77,12 +80,14 @@ class MainActivity : Activity() {
         root.addView(subtitle)
         root.addView(status)
         root.addView(protectButton)
+        root.addView(stopButton)
         root.addView(accessibilityButton)
         root.addView(info)
         setContentView(root)
     }
 
     private fun startProtection() {
+        status.text = "Uruchamianie ochrony…"
         val intent = VpnService.prepare(this)
         if (intent != null) {
             startActivityForResult(intent, VPN_REQUEST)
@@ -111,13 +116,28 @@ class MainActivity : Activity() {
         val serviceIntent = Intent(this, BlockVpnService::class.java)
         try {
             startForegroundService(serviceIntent)
-            status.text = "Ochrona jest aktywna"
-            Toast.makeText(this, "STOP HAZARD — ochrona aktywna", Toast.LENGTH_SHORT).show()
+            status.text = "Ochrona uruchomiona — sprawdź działanie VPN"
+            Toast.makeText(this, "STOP HAZARD — uruchamianie ochrony", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             status.text = "Nie udało się uruchomić ochrony"
             Toast.makeText(
                 this,
                 "Błąd uruchamiania ochrony: ${e.message}",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    private fun stopProtection() {
+        try {
+            stopService(Intent(this, BlockVpnService::class.java))
+            status.text = "Ochrona jest wyłączona"
+            Toast.makeText(this, "STOP HAZARD — ochrona wyłączona", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            status.text = "Nie udało się wyłączyć ochrony"
+            Toast.makeText(
+                this,
+                "Błąd wyłączania ochrony: ${e.message}",
                 Toast.LENGTH_LONG
             ).show()
         }
