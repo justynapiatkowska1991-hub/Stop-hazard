@@ -3,7 +3,6 @@ package pl.stophazard.app
 import android.app.Activity
 import android.content.Intent
 import android.graphics.Color
-import android.net.VpnService
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Button
@@ -41,36 +40,38 @@ class MainActivity : Activity() {
         }
 
         status = TextView(this).apply {
-            text = "Ochrona jest wyłączona"
+            text = "Ochrona jest chwilowo niedostępna"
             textSize = 18f
             gravity = android.view.Gravity.CENTER
             setPadding(0, 20, 0, 20)
         }
 
         val protectButton = Button(this).apply {
-            text = "WŁĄCZ OCHRONĘ"
-            setOnClickListener { startProtection() }
-        }
-
-        val stopButton = Button(this).apply {
-            text = "WYŁĄCZ OCHRONĘ"
-            setOnClickListener { stopProtection() }
+            text = "SPRAWDŹ OCHRONĘ"
+            setOnClickListener {
+                status.text = "Filtr jest jeszcze w przygotowaniu"
+                Toast.makeText(
+                    this@MainActivity,
+                    "Ochrona zostanie włączona po zakończeniu bezpiecznych testów.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
 
         val accessibilityButton = Button(this).apply {
-            text = "DODATKOWO WŁĄCZ DOSTĘPNOŚĆ"
+            text = "USTAWIENIA DOSTĘPNOŚCI"
             setOnClickListener {
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                 Toast.makeText(
                     this@MainActivity,
-                    "Wybierz STOP HAZARD i włącz usługę.",
+                    "Usługa Dostępność jest opcjonalna i nie zastępuje filtra.",
                     Toast.LENGTH_LONG
                 ).show()
             }
         }
 
         val info = TextView(this).apply {
-            text = "STOP HAZARD używa VPN do filtrowania zapytań DNS oraz usługi Dostępność jako dodatkowej ochrony."
+            text = "Aplikacja jest w bezpiecznej wersji testowej. Internet pozostaje dostępny, a filtr hazardowy zostanie uruchomiony dopiero po pozytywnych testach."
             textSize = 15f
             gravity = android.view.Gravity.CENTER
             setPadding(0, 25, 0, 10)
@@ -80,70 +81,8 @@ class MainActivity : Activity() {
         root.addView(subtitle)
         root.addView(status)
         root.addView(protectButton)
-        root.addView(stopButton)
         root.addView(accessibilityButton)
         root.addView(info)
         setContentView(root)
-    }
-
-    private fun startProtection() {
-        status.text = "Uruchamianie ochrony…"
-        val intent = VpnService.prepare(this)
-        if (intent != null) {
-            startActivityForResult(intent, VPN_REQUEST)
-            return
-        }
-        startVpnService()
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == VPN_REQUEST) {
-            if (resultCode == RESULT_OK) {
-                startVpnService()
-            } else {
-                status.text = "VPN nie został zaakceptowany"
-                Toast.makeText(
-                    this,
-                    "Aby blokowanie działało, zaakceptuj połączenie VPN.",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
-        }
-    }
-
-    private fun startVpnService() {
-        val serviceIntent = Intent(this, BlockVpnService::class.java)
-        try {
-            startForegroundService(serviceIntent)
-            status.text = "Ochrona uruchomiona — sprawdź działanie VPN"
-            Toast.makeText(this, "STOP HAZARD — uruchamianie ochrony", Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            status.text = "Nie udało się uruchomić ochrony"
-            Toast.makeText(
-                this,
-                "Błąd uruchamiania ochrony: ${e.message}",
-                Toast.LENGTH_LONG
-            ).show()
-        }
-    }
-
-    private fun stopProtection() {
-        try {
-            stopService(Intent(this, BlockVpnService::class.java))
-            status.text = "Ochrona jest wyłączona"
-            Toast.makeText(this, "STOP HAZARD — ochrona wyłączona", Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            status.text = "Nie udało się wyłączyć ochrony"
-            Toast.makeText(
-                this,
-                "Błąd wyłączania ochrony: ${e.message}",
-                Toast.LENGTH_LONG
-            ).show()
-        }
-    }
-
-    companion object {
-        private const val VPN_REQUEST = 1001
     }
 }
