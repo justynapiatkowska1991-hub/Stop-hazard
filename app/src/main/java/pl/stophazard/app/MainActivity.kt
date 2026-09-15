@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Button
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -36,7 +37,7 @@ class MainActivity : Activity() {
             text = "Blokowanie stron hazardowych"
             textSize = 18f
             gravity = android.view.Gravity.CENTER
-            setPadding(0, 20, 0, 35)
+            setPadding(0, 20, 0, 25)
         }
 
         status = TextView(this).apply {
@@ -49,12 +50,33 @@ class MainActivity : Activity() {
         val protectButton = Button(this).apply {
             text = "SPRAWDŹ OCHRONĘ"
             setOnClickListener {
-                status.text = "Filtr jest jeszcze w przygotowaniu"
+                status.text = "Filtr ruchu jest jeszcze w przygotowaniu"
                 Toast.makeText(
                     this@MainActivity,
                     "Ochrona zostanie włączona po zakończeniu bezpiecznych testów.",
                     Toast.LENGTH_LONG
                 ).show()
+            }
+        }
+
+        val domainInput = EditText(this).apply {
+            hint = "Wpisz domenę do sprawdzenia, np. sts.pl"
+            singleLine = true
+            setPadding(12, 20, 12, 20)
+        }
+
+        val checkDomainButton = Button(this).apply {
+            text = "SPRAWDŹ DOMENĘ"
+            setOnClickListener {
+                val host = domainInput.text.toString()
+                if (host.isBlank()) {
+                    status.text = "Wpisz domenę do sprawdzenia"
+                } else {
+                    status.text = when (DomainFilter.decision(host)) {
+                        BlockDecision.BLOCK -> "WYNIK: BLOKADA — $host"
+                        BlockDecision.ALLOW -> "WYNIK: DOZWOLONA — $host"
+                    }
+                }
             }
         }
 
@@ -71,7 +93,7 @@ class MainActivity : Activity() {
         }
 
         val info = TextView(this).apply {
-            text = "Aplikacja jest w bezpiecznej wersji testowej. Internet pozostaje dostępny, a filtr hazardowy zostanie uruchomiony dopiero po pozytywnych testach."
+            text = "Wersja testowa: możesz sprawdzić, czy domena znajduje się na liście blokad. Internet pozostaje dostępny. Aktywne filtrowanie zostanie uruchomione dopiero po pozytywnych testach."
             textSize = 15f
             gravity = android.view.Gravity.CENTER
             setPadding(0, 25, 0, 10)
@@ -81,6 +103,8 @@ class MainActivity : Activity() {
         root.addView(subtitle)
         root.addView(status)
         root.addView(protectButton)
+        root.addView(domainInput)
+        root.addView(checkDomainButton)
         root.addView(accessibilityButton)
         root.addView(info)
         setContentView(root)
