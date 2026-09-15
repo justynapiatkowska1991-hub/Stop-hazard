@@ -6,21 +6,21 @@ import org.junit.Test
 class DomainFilterTest {
     @Test
     fun blocksExactHazardDomain() {
-        assertEquals(BlockDecision.BLOCK, DomainFilter.check("sts.pl"))
+        assertEquals(BlockDecision.BLOCK, DomainFilter.decision("sts.pl"))
     }
 
     @Test
     fun blocksSubdomain() {
-        assertEquals(BlockDecision.BLOCK, DomainFilter.check("login.fortuna.pl"))
+        assertEquals(BlockDecision.BLOCK, DomainFilter.decision("login.fortuna.pl"))
     }
 
     @Test
     fun allowsUnrelatedDomain() {
-        assertEquals(BlockDecision.ALLOW, DomainFilter.check("example.com"))
+        assertEquals(BlockDecision.ALLOW, DomainFilter.decision("example.com"))
     }
 
     @Test
     fun normalizesUppercaseAndTrailingDot() {
-        assertEquals(BlockDecision.BLOCK, DomainFilter.check("WWW.STS.PL."))
+        assertEquals(BlockDecision.BLOCK, DomainFilter.decision("WWW.STS.PL."))
     }
 }
