@@ -23,7 +23,7 @@ jobs:
 
       - name: Install Android NDK and system CMake
         run: |
-          sdkmanager "ndk;23.1.7779620"
+          sdkmanager "ndk;27.0.12077973"
           sudo apt-get update
           sudo apt-get install -y cmake ninja-build
           cmake --version
