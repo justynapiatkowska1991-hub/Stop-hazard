@@ -34,33 +34,33 @@ class MainActivity : Activity() {
         }
 
         val subtitle = TextView(this).apply {
-            text = "Blokowanie stron hazardowych"
+            text = "Bezpieczny tester blokowania stron hazardowych"
             textSize = 18f
             gravity = android.view.Gravity.CENTER
             setPadding(0, 20, 0, 25)
         }
 
         status = TextView(this).apply {
-            text = "Ochrona jest chwilowo niedostępna"
+            text = "Ochrona aktywna: NIE\nTryb testowy"
             textSize = 18f
             gravity = android.view.Gravity.CENTER
             setPadding(0, 20, 0, 20)
         }
 
         val protectButton = Button(this).apply {
-            text = "SPRAWDŹ OCHRONĘ"
+            text = "OCHRONA — W PRZYGOTOWANIU"
             setOnClickListener {
-                status.text = "Filtr ruchu jest jeszcze w przygotowaniu"
+                status.text = "Ochrona aktywna: NIE\nTryb testowy"
                 Toast.makeText(
                     this@MainActivity,
-                    "Ochrona zostanie włączona po zakończeniu bezpiecznych testów.",
+                    "Aktywne filtrowanie jest jeszcze wyłączone, aby nie blokować internetu.",
                     Toast.LENGTH_LONG
                 ).show()
             }
         }
 
         val domainInput = EditText(this).apply {
-            hint = "Wpisz domenę do sprawdzenia, np. sts.pl"
+            hint = "Wpisz domenę, np. sts.pl"
             maxLines = 1
             setPadding(12, 20, 12, 20)
         }
@@ -86,14 +86,14 @@ class MainActivity : Activity() {
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                 Toast.makeText(
                     this@MainActivity,
-                    "Usługa Dostępność jest opcjonalna i nie zastępuje filtra.",
+                    "Dostępność jest opcjonalna i nie włącza jeszcze aktywnej blokady.",
                     Toast.LENGTH_LONG
                 ).show()
             }
         }
 
         val info = TextView(this).apply {
-            text = "Wersja testowa: możesz sprawdzić, czy domena znajduje się na liście blokad. Internet pozostaje dostępny. Aktywne filtrowanie zostanie uruchomione dopiero po pozytywnych testach."
+            text = "WERSJA TESTOWA\n\nMożesz sprawdzić, czy domena znajduje się na liście blokad. Internet pozostaje dostępny. Aktywne filtrowanie zostanie uruchomione dopiero po zakończeniu bezpiecznych testów."
             textSize = 15f
             gravity = android.view.Gravity.CENTER
             setPadding(0, 25, 0, 10)
