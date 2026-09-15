@@ -61,7 +61,7 @@ class MainActivity : Activity() {
 
         val domainInput = EditText(this).apply {
             hint = "Wpisz domenę do sprawdzenia, np. sts.pl"
-            singleLine = true
+            maxLines = 1
             setPadding(12, 20, 12, 20)
         }
 
