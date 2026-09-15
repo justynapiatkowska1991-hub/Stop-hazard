@@ -1,6 +1,7 @@
 package pl.stophazard.app
 
 import android.app.Activity
+import android.content.ComponentName
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
@@ -13,10 +14,16 @@ import android.widget.Toast
 
 class MainActivity : Activity() {
     private lateinit var status: TextView
+    private lateinit var protectButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         buildUi()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::status.isInitialized) updateProtectionStatus()
     }
 
     private fun buildUi() {
@@ -34,28 +41,35 @@ class MainActivity : Activity() {
         }
 
         val subtitle = TextView(this).apply {
-            text = "Bezpieczny tester blokowania stron hazardowych"
+            text = "Bezpieczne blokowanie stron hazardowych"
             textSize = 18f
             gravity = android.view.Gravity.CENTER
             setPadding(0, 20, 0, 25)
         }
 
         status = TextView(this).apply {
-            text = "Ochrona aktywna: NIE\nTryb testowy"
             textSize = 18f
             gravity = android.view.Gravity.CENTER
             setPadding(0, 20, 0, 20)
         }
 
-        val protectButton = Button(this).apply {
-            text = "OCHRONA — W PRZYGOTOWANIU"
+        protectButton = Button(this).apply {
+            text = "WŁĄCZ OCHRONĘ"
             setOnClickListener {
-                status.text = "Ochrona aktywna: NIE\nTryb testowy"
-                Toast.makeText(
-                    this@MainActivity,
-                    "Aktywne filtrowanie jest jeszcze wyłączone, aby nie blokować internetu.",
-                    Toast.LENGTH_LONG
-                ).show()
+                if (isAccessibilityEnabled()) {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Ochrona przez Dostępność jest już włączona.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                } else {
+                    startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                    Toast.makeText(
+                        this@MainActivity,
+                        "W ustawieniach włącz usługę STOP HAZARD.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
             }
         }
 
@@ -84,16 +98,11 @@ class MainActivity : Activity() {
             text = "USTAWIENIA DOSTĘPNOŚCI"
             setOnClickListener {
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                Toast.makeText(
-                    this@MainActivity,
-                    "Dostępność jest opcjonalna i nie włącza jeszcze aktywnej blokady.",
-                    Toast.LENGTH_LONG
-                ).show()
             }
         }
 
         val info = TextView(this).apply {
-            text = "WERSJA TESTOWA\n\nMożesz sprawdzić, czy domena znajduje się na liście blokad. Internet pozostaje dostępny. Aktywne filtrowanie zostanie uruchomione dopiero po zakończeniu bezpiecznych testów."
+            text = "Bezpieczny tryb: aplikacja nie uruchamia VPN i nie odcina internetu. Ochrona działa przez opcjonalną usługę Dostępność, która rozpoznaje adresy stron hazardowych w obsługiwanych przeglądarkach."
             textSize = 15f
             gravity = android.view.Gravity.CENTER
             setPadding(0, 25, 0, 10)
@@ -108,5 +117,28 @@ class MainActivity : Activity() {
         root.addView(accessibilityButton)
         root.addView(info)
         setContentView(root)
+        updateProtectionStatus()
+    }
+
+    private fun updateProtectionStatus() {
+        val enabled = isAccessibilityEnabled()
+        status.text = if (enabled) {
+            "Ochrona Dostępności jest włączona"
+        } else {
+            "Ochrona jest wyłączona — włącz Dostępność"
+        }
+        protectButton.text = if (enabled) "OCHRONA JEST WŁĄCZONA" else "WŁĄCZ OCHRONĘ"
+    }
+
+    private fun isAccessibilityEnabled(): Boolean {
+        val expected = ComponentName(this, GamblingAccessibilityService::class.java)
+        val enabledServices = Settings.Secure.getString(
+            contentResolver,
+            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        ) ?: return false
+
+        return enabledServices.split(':').any { value ->
+            ComponentName.unflattenFromString(value) == expected
+        }
     }
 }
