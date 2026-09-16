@@ -19,14 +19,14 @@ class GamblingAccessibilityService : AccessibilityService() {
 
         val text = StringBuilder()
 
-        // Najpierw odczytujemy tylko pasek adresu. Dzięki temu zwykła
-        // treść stron nie jest traktowana jako adres i nie jest blokowana.
         findAddressBar(rootInActiveWindow)?.let {
             text.append(' ').append(it)
         }
 
-        // Fallback dla przeglądarek, które nie udostępniają identyfikatora
-        // paska adresu.
+        findAddressBar(event.source)?.let {
+            text.append(' ').append(it)
+        }
+
         event.text.forEach { text.append(' ').append(it) }
         event.contentDescription?.let { text.append(' ').append(it) }
 
@@ -90,15 +90,12 @@ class GamblingAccessibilityService : AccessibilityService() {
     }
 
     private fun findBlockedHost(raw: String): String? {
-        val urls = URL_REGEX.findAll(raw)
-
-        for (match in urls) {
+        for (match in URL_REGEX.findAll(raw)) {
             val host = match.groupValues[1]
             if (BlockedDomains.isBlocked(host)) {
                 return BlockedDomains.normalize(host)
             }
         }
-
         return null
     }
 
