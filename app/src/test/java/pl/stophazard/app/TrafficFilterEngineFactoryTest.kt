@@ -15,4 +15,14 @@ class TrafficFilterEngineFactoryTest {
         assertFalse(engine.start())
         assertFalse(engine.isRunning())
     }
+
+    @Test
+    fun disabledEngineCanBeStoppedRepeatedlyWithoutChangingState() {
+        val engine = TrafficFilterEngineFactory.create()
+
+        engine.stop()
+        engine.stop()
+
+        assertFalse(engine.isRunning())
+    }
 }
