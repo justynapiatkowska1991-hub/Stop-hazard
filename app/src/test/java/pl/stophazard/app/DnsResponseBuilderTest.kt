@@ -1,5 +1,6 @@
 package pl.stophazard.app
 
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -21,6 +22,12 @@ class DnsResponseBuilderTest {
         assertEquals(3, flags and 0x000f)
         assertEquals(1, response[5].toInt())
         assertEquals(query.size, response.size)
+        assertArrayEquals(query.copyOfRange(12, query.size), response.copyOfRange(12, response.size))
+    }
+
+    @Test
+    fun blockedSubdomainGetsNxDomain() {
+        assertNotNull(DnsResponseBuilder.responseFor(query("www.fortuna.pl")))
     }
 
     @Test
@@ -31,6 +38,12 @@ class DnsResponseBuilderTest {
     @Test
     fun malformedQueryDoesNotProduceResponse() {
         assertNull(DnsResponseBuilder.responseFor(byteArrayOf(1, 2, 3)))
+    }
+
+    @Test
+    fun responseIsNotCreatedForDnsResponsePacket() {
+        val responsePacket = query("fortuna.pl").also { it[2] = 0x81.toByte() }
+        assertNull(DnsResponseBuilder.responseFor(responsePacket))
     }
 
     private fun query(domain: String): ByteArray {
