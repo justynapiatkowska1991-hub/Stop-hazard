@@ -23,48 +23,6 @@ jobs:
         with:
           packages: platform-tools
 
-      - name: Install Android NDK and system CMake
-        run: |
-          sdkmanager "ndk;27.0.12077973"
-          sudo apt-get update
-          sudo apt-get install -y cmake ninja-build
-          cmake --version
-
-      - name: Clone tun2socks Android library
-        run: git clone --depth 1 https://github.com/hiFrankYoung/tun2socks-android.git tun2socks-source
-
-      - name: Configure tun2socks to use runner CMake
-        working-directory: tun2socks-source
-        run: |
-          sed -i '/version "3.10.2"/d' tun2socks/build.gradle
-          printf 'sdk.dir=%s\n' "$ANDROID_SDK_ROOT" > local.properties
-          printf 'cmake.dir=%s\n' "$(dirname "$(dirname "$(readlink -f "$(command -v cmake)")")")" >> local.properties
-          cat local.properties
-
-      - name: Build tun2socks AAR
-        working-directory: tun2socks-source
-        run: |
-          chmod +x gradlew
-          ./gradlew --no-daemon :tun2socks:assembleRelease
-
-      - name: Copy tun2socks AAR into app
-        run: |
-          set -eux
-          mkdir -p app/libs
-          cp tun2socks-source/tun2socks/build/outputs/aar/tun2socks-release.aar app/libs/
-          test -f app/libs/tun2socks-release.aar
-
-      - name: Copy real tun2socks native libraries into app
-        run: |
-          set -eux
-          SRC=tun2socks-source/tun2socks/build/intermediates/stripped_native_libs/release/out/lib
-          test -d "$SRC"
-          find "$SRC" -type f -name '*.so' -print
-          rm -rf app/src/main/jniLibs
-          mkdir -p app/src/main/jniLibs
-          cp -R "$SRC"/. app/src/main/jniLibs/
-          test -f app/src/main/jniLibs/arm64-v8a/libtun2socks.so
-
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
@@ -72,11 +30,6 @@ jobs:
 
       - name: Build debug APK from clean state
         run: gradle --no-daemon clean assembleDebug
-
-      - name: Verify tun2socks is packaged
-        run: |
-          unzip -l app/build/outputs/apk/debug/app-debug.apk | grep -E 'lib/.*/libtun2socks\.so'
-          test $(unzip -l app/build/outputs/apk/debug/app-debug.apk | grep -c 'libtun2socks\.so') -ge 1
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
