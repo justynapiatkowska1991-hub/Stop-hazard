@@ -22,16 +22,22 @@ class BlockVpnService : VpnService() {
         val selectedEngine = TrafficFilterEngineFactory.create()
         engine = selectedEngine
 
-        val started = selectedEngine.start()
+        val started = try {
+            selectedEngine.start()
+        } catch (_: Throwable) {
+            // Awaria silnika nie może przejąć ruchu ani odciąć internetu.
+            false
+        }
+
         running.set(started)
 
         if (!started) {
             engine = null
-            stopSelf()
+            stopSelf(startId)
             return START_NOT_STICKY
         }
 
-        return START_STICKY
+        return START_NOT_STICKY
     }
 
     override fun onRevoke() {
@@ -45,7 +51,11 @@ class BlockVpnService : VpnService() {
     }
 
     private fun stopVpn() {
-        engine?.stop()
+        try {
+            engine?.stop()
+        } catch (_: Throwable) {
+            // Sprzątanie nie może doprowadzić do ponownego uruchomienia usługi.
+        }
         engine = null
         running.set(false)
         stopSelf()
