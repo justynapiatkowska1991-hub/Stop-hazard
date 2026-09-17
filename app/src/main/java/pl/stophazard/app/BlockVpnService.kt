@@ -19,6 +19,8 @@ class BlockVpnService : VpnService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // Nie uruchamiamy pustego VPN ani tun2socks.
         // Wszystkie implementacje muszą przejść przez fabrykę.
+        stopExistingEngine()
+
         val selectedEngine = TrafficFilterEngineFactory.create()
         engine = selectedEngine
 
@@ -50,14 +52,19 @@ class BlockVpnService : VpnService() {
         super.onDestroy()
     }
 
-    private fun stopVpn() {
+    private fun stopExistingEngine() {
+        val previousEngine = engine ?: return
         try {
-            engine?.stop()
+            previousEngine.stop()
         } catch (_: Throwable) {
-            // Sprzątanie nie może doprowadzić do ponownego uruchomienia usługi.
+            // Nie pozwalamy, aby awaria sprzątania przerwała bezpieczny start.
         }
         engine = null
         running.set(false)
+    }
+
+    private fun stopVpn() {
+        stopExistingEngine()
         stopSelf()
     }
 }
