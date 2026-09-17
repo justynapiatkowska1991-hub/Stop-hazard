@@ -5,24 +5,28 @@ import android.net.VpnService
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * Bezpieczny tryb awaryjny.
+ * Usługa ochrony ruchu.
  *
- * Usługa nie uruchamia pustego VPN. Korzysta z jawnego kontraktu silnika,
- * którego tymczasowa implementacja jest wyłączona. Dzięki temu przypadkowe
- * uruchomienie usługi nie odcina całego internetu.
+ * Silnik jest tworzony wyłącznie przez TrafficFilterEngineFactory.
+ * Dopóki prawdziwy silnik nie przejdzie testów routingu TCP/UDP/DNS,
+ * fabryka zwraca bezpieczną implementację wyłączoną.
  */
 class BlockVpnService : VpnService() {
 
     private val running = AtomicBoolean(false)
-    private val engine: TrafficFilterEngine = DisabledTrafficFilterEngine()
+    private var engine: TrafficFilterEngine? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Nie wywołujemy Builder().establish() ani tun2socks.
-        // Silnik zostanie podłączony dopiero po testach pełnego routingu.
-        val started = engine.start()
+        // Nie uruchamiamy pustego VPN ani tun2socks.
+        // Wszystkie implementacje muszą przejść przez fabrykę.
+        val selectedEngine = TrafficFilterEngineFactory.create()
+        engine = selectedEngine
+
+        val started = selectedEngine.start()
         running.set(started)
 
         if (!started) {
+            engine = null
             stopSelf()
             return START_NOT_STICKY
         }
@@ -41,7 +45,8 @@ class BlockVpnService : VpnService() {
     }
 
     private fun stopVpn() {
-        engine.stop()
+        engine?.stop()
+        engine = null
         running.set(false)
         stopSelf()
     }
