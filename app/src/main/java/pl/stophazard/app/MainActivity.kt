@@ -1,7 +1,6 @@
 package pl.stophazard.app
 
 import android.app.Activity
-import android.content.ComponentName
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
@@ -41,7 +40,7 @@ class MainActivity : Activity() {
         }
 
         val subtitle = TextView(this).apply {
-            text = "Bezpieczne blokowanie stron hazardowych"
+            text = "Blokowanie stron hazardowych — wersja testowa"
             textSize = 18f
             gravity = android.view.Gravity.CENTER
             setPadding(0, 20, 0, 25)
@@ -54,23 +53,8 @@ class MainActivity : Activity() {
         }
 
         protectButton = Button(this).apply {
-            text = "WŁĄCZ OCHRONĘ"
-            setOnClickListener {
-                if (isAccessibilityEnabled()) {
-                    Toast.makeText(
-                        this@MainActivity,
-                        "Ochrona przez Dostępność jest już włączona.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                } else {
-                    startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                    Toast.makeText(
-                        this@MainActivity,
-                        "W ustawieniach włącz usługę STOP HAZARD.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            }
+            text = "OCHRONA JESZCZE NIEDOSTĘPNA"
+            isEnabled = false
         }
 
         val domainInput = EditText(this).apply {
@@ -87,8 +71,8 @@ class MainActivity : Activity() {
                     status.text = "Wpisz domenę do sprawdzenia"
                 } else {
                     status.text = when (DomainFilter.decision(host)) {
-                        BlockDecision.BLOCK -> "WYNIK: BLOKADA — $host"
-                        BlockDecision.ALLOW -> "WYNIK: DOZWOLONA — $host"
+                        BlockDecision.BLOCK -> "WYNIK TESTU: BLOKADA — $host"
+                        BlockDecision.ALLOW -> "WYNIK TESTU: DOZWOLONA — $host"
                     }
                 }
             }
@@ -102,7 +86,7 @@ class MainActivity : Activity() {
         }
 
         val info = TextView(this).apply {
-            text = "Bezpieczny tryb: aplikacja nie uruchamia VPN i nie odcina internetu. Ochrona działa przez opcjonalną usługę Dostępność, która rozpoznaje adresy stron hazardowych w obsługiwanych przeglądarkach."
+            text = "Ochrona systemowa jest obecnie wyłączona. Aplikacja nie uruchamia VPN, nie przejmuje ruchu i nie odcina internetu. Tester domen pokazuje wyłącznie wynik listy — nie oznacza to, że strona zostanie zablokowana w przeglądarce."
             textSize = 15f
             gravity = android.view.Gravity.CENTER
             setPadding(0, 25, 0, 10)
@@ -121,24 +105,8 @@ class MainActivity : Activity() {
     }
 
     private fun updateProtectionStatus() {
-        val enabled = isAccessibilityEnabled()
-        status.text = if (enabled) {
-            "Ochrona Dostępności jest włączona"
-        } else {
-            "Ochrona jest wyłączona — włącz Dostępność"
-        }
-        protectButton.text = if (enabled) "OCHRONA JEST WŁĄCZONA" else "WŁĄCZ OCHRONĘ"
-    }
-
-    private fun isAccessibilityEnabled(): Boolean {
-        val expected = ComponentName(this, GamblingAccessibilityService::class.java)
-        val enabledServices = Settings.Secure.getString(
-            contentResolver,
-            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
-        ) ?: return false
-
-        return enabledServices.split(':').any { value ->
-            ComponentName.unflattenFromString(value) == expected
-        }
+        status.text = "Ochrona systemowa jest wyłączona — silnik filtrowania jest jeszcze w budowie"
+        protectButton.text = "OCHRONA JESZCZE NIEDOSTĘPNA"
+        protectButton.isEnabled = false
     }
 }
