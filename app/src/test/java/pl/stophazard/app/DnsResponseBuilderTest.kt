@@ -46,6 +46,18 @@ class DnsResponseBuilderTest {
         assertNull(DnsResponseBuilder.responseFor(responsePacket))
     }
 
+    @Test
+    fun multipleQuestionsAreRejected() {
+        val packet = query("fortuna.pl").also { it[5] = 2 }
+        assertNull(DnsResponseBuilder.responseFor(packet))
+    }
+
+    @Test
+    fun compressedNamePointerIsRejected() {
+        val packet = query("fortuna.pl").also { it[12] = 0xc0.toByte() }
+        assertNull(DnsResponseBuilder.responseFor(packet))
+    }
+
     private fun query(domain: String): ByteArray {
         val output = ArrayList<Byte>()
         fun add(value: Int) { output += value.toByte() }
