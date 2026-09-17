@@ -1,12 +1,24 @@
 package pl.stophazard.app
 
 /**
- * Buduje minimalną odpowiedź DNS NXDOMAIN dla zablokowanego zapytania.
+ * Buduje minimalną odpowiedź DNS NXDOMAIN wyłącznie dla domen zablokowanych.
  *
  * Klasa nie otwiera socketów, nie tworzy VPN i nie przekazuje ruchu.
- * Odpowiedź zawiera wyłącznie nagłówek oraz oryginalną sekcję pytania.
+ * Odpowiedź zawiera nagłówek oraz oryginalną sekcję pytania.
  */
 object DnsResponseBuilder {
+    /**
+     * Zwraca NXDOMAIN tylko wtedy, gdy DnsFilterPolicy blokuje domenę.
+     * Dla domeny dozwolonej lub niepoprawnego pakietu zwraca null.
+     */
+    fun responseFor(packet: ByteArray): ByteArray? {
+        val query = DnsPacketFilter.parseQuery(packet) ?: return null
+        if (DnsFilterPolicy.decide(query.domain) != DnsFilterPolicy.Decision.BLOCK) {
+            return null
+        }
+        return nxdomainResponse(packet)
+    }
+
     fun nxdomainResponse(queryPacket: ByteArray): ByteArray? {
         val query = DnsPacketFilter.parseQuery(queryPacket) ?: return null
         val questionEnd = questionEnd(queryPacket) ?: return null
