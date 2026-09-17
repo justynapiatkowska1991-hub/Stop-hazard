@@ -1,15 +1,12 @@
 package pl.stophazard.app
 
 import android.app.Activity
-import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
-import android.provider.Settings
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
 
 class MainActivity : Activity() {
     private lateinit var status: TextView
@@ -78,15 +75,8 @@ class MainActivity : Activity() {
             }
         }
 
-        val accessibilityButton = Button(this).apply {
-            text = "USTAWIENIA DOSTĘPNOŚCI"
-            setOnClickListener {
-                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-            }
-        }
-
         val info = TextView(this).apply {
-            text = "Ochrona systemowa jest obecnie wyłączona. Aplikacja nie uruchamia VPN, nie przejmuje ruchu i nie odcina internetu. Tester domen pokazuje wyłącznie wynik listy — nie oznacza to, że strona zostanie zablokowana w przeglądarce."
+            text = "Ochrona systemowa jest obecnie wyłączona. Aplikacja nie uruchamia VPN, nie korzysta z Dostępności, nie przejmuje ruchu i nie odcina internetu. Tester domen pokazuje wyłącznie wynik listy — nie oznacza to, że strona zostanie zablokowana w przeglądarce."
             textSize = 15f
             gravity = android.view.Gravity.CENTER
             setPadding(0, 25, 0, 10)
@@ -98,7 +88,6 @@ class MainActivity : Activity() {
         root.addView(protectButton)
         root.addView(domainInput)
         root.addView(checkDomainButton)
-        root.addView(accessibilityButton)
         root.addView(info)
         setContentView(root)
         updateProtectionStatus()
