@@ -28,7 +28,3 @@ android {
 
     ndkVersion = "27.0.12077973"
 }
-
-dependencies {
-    implementation(files("libs/tun2socks-release.aar"))
-}
