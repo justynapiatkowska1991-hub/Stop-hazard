@@ -29,7 +29,7 @@ class DnsPacketFilterTest {
         add(0x12); add(0x34) // transaction ID
         add(0x01); add(0x00) // standard query, recursion desired
         add(0x00); add(0x01) // one question
-        repeat(3) { add(0) } // answer, authority, additional counts
+        repeat(6) { add(0) } // answer, authority, additional counts
         domain.split('.').forEach { label ->
             add(label.length)
             label.toByteArray(Charsets.US_ASCII).forEach { output += it }
