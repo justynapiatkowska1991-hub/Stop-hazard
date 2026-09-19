@@ -3,6 +3,9 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+val useNetstack =
+    (project.findProperty("stophazard.netstack") as String?)?.toBooleanStrictOrNull() ?: false
+
 android {
     namespace = "pl.stophazard.app"
     compileSdk = 36
@@ -13,6 +16,19 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "0.1.0"
+        buildConfigField("boolean", "USE_NETSTACK", useNetstack.toString())
+    }
+
+    sourceSets {
+        getByName("main") {
+            if (useNetstack) {
+                kotlin.srcDir("src/netstack/kotlin")
+            }
+        }
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     compileOptions {
@@ -24,5 +40,8 @@ android {
 }
 
 dependencies {
+    if (useNetstack) {
+        implementation(files("libs/netstack.aar"))
+    }
     testImplementation("junit:junit:4.13.2")
 }
