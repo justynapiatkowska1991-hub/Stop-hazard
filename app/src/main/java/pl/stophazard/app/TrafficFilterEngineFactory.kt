@@ -3,17 +3,17 @@ package pl.stophazard.app
 /**
  * Jedno miejsce wyboru silnika filtrowania.
  *
- * Zwykły APK pozostaje bezpiecznie wyłączony. Produkcyjny adapter NetValve jest
- * dostępny tylko w specjalnym buildzie z -Pstophazard.netstack=true i nadal
- * wymaga osobnego testu na urządzeniu przed włączeniem przycisku OCHRONA.
+ * Zwykły APK pozostaje bezpiecznie wyłączony. Nawet build z NetValve ma osobną
+ * bramkę runtime, dzięki czemu sam test kompilacji nie może przejąć Internetu.
  */
 object TrafficFilterEngineFactory {
     fun create(): TrafficFilterEngine = DisabledTrafficFilterEngine()
 
     fun create(service: BlockVpnService): TrafficFilterEngine {
-        if (!BuildConfig.USE_NETSTACK) return DisabledTrafficFilterEngine()
+        if (!BuildConfig.USE_NETSTACK || !BuildConfig.ENABLE_NETSTACK_RUNTIME) {
+            return DisabledTrafficFilterEngine()
+        }
 
-        // Reflection keeps the safe APK free of the native NetValve AAR.
         return runCatching {
             Class.forName("pl.stophazard.app.NetValveTrafficFilterEngine")
                 .getDeclaredConstructor(android.net.VpnService::class.java)
