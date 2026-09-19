@@ -27,24 +27,27 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
 
       - name: Install Android NDK
-        run: sdkmanager "ndk;27.2.12479018"
+        run: |
+          sdkmanager "ndk;27.2.12479018"
+          echo "ANDROID_NDK_HOME=\${ANDROID_HOME}/ndk/27.2.12479018" >> "$GITHUB_ENV"
 
       - name: Build pinned NetValve netstack AAR
         env:
           NETVALVE_COMMIT: f7b34b0fb93b9d1e6a80f513c1434697eed632ce
-          ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.2.12479018
           GOTOOLCHAIN: auto
         run: |
           git clone https://github.com/IEAmir/NetValve.git /tmp/NetValve
           cd /tmp/NetValve
-          git checkout "${NETVALVE_COMMIT}"
+          git checkout "\${NETVALVE_COMMIT}"
           chmod +x netstack/build-aar.sh
           cd netstack
           ./build-aar.sh arm64
           test -s ../app/libs/netstack.aar
-          cp ../app/libs/netstack.aar "${GITHUB_WORKSPACE}/netstack.aar"
+          cp ../app/libs/netstack.aar "\${GITHUB_WORKSPACE}/netstack.aar"
 
       - name: Upload external engine AAR
         uses: actions/upload-artifact@v4
