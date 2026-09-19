@@ -14,7 +14,9 @@ android {
 
     defaultConfig {
         applicationId = "pl.stophazard.app"
-        minSdk = 26
+        // NetValve's production AAR requires API 29+. Keep the normal build at 26,
+        // while the NetValve production candidate is built with the required floor.
+        minSdk = if (useNetstack) 29 else 26
         targetSdk = 35
         versionCode = 1
         versionName = "0.1.0"
