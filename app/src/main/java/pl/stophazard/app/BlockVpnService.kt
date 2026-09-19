@@ -7,27 +7,23 @@ import java.util.concurrent.atomic.AtomicBoolean
 /**
  * Usługa ochrony ruchu.
  *
- * Silnik jest tworzony wyłącznie przez TrafficFilterEngineFactory.
- * Dopóki prawdziwy silnik nie przejdzie testów routingu TCP/UDP/DNS,
- * fabryka zwraca bezpieczną implementację wyłączoną.
+ * Domyślny build nadal wybiera DisabledTrafficFilterEngine. Dopiero specjalny
+ * build integracyjny może utworzyć adapter NetValve, a jego uruchomienie jest
+ * nadal chronione przez wynik start().
  */
 class BlockVpnService : VpnService() {
-
     private val running = AtomicBoolean(false)
     private var engine: TrafficFilterEngine? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Nie uruchamiamy pustego VPN ani tun2socks.
-        // Wszystkie implementacje muszą przejść przez fabrykę.
         stopExistingEngine()
 
-        val selectedEngine = TrafficFilterEngineFactory.create()
+        val selectedEngine = TrafficFilterEngineFactory.create(this)
         engine = selectedEngine
 
         val started = try {
             selectedEngine.start()
         } catch (_: Throwable) {
-            // Awaria silnika nie może przejąć ruchu ani odciąć internetu.
             false
         }
 
@@ -57,7 +53,7 @@ class BlockVpnService : VpnService() {
         try {
             previousEngine.stop()
         } catch (_: Throwable) {
-            // Nie pozwalamy, aby awaria sprzątania przerwała bezpieczny start.
+            // Cleanup failure must not keep the service alive.
         }
         engine = null
         running.set(false)
