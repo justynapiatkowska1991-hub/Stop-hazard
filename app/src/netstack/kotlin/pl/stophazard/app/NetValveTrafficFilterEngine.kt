@@ -116,7 +116,7 @@ class NetValveTrafficFilterEngine(
                     while (running.get()) {
                         val count = socket.getInputStream().read(buffer)
                         if (count <= 0) break
-                        appSide.write(buffer, 0, count)
+                        appSide.write(buffer.copyOf(count))
                     }
                 } catch (_: Throwable) {
                     // Closing one direction closes the flow below.
@@ -126,9 +126,9 @@ class NetValveTrafficFilterEngine(
 
             val buffer = ByteArray(RELAY_BUFFER)
             while (running.get()) {
-                val count = appSide.read(buffer).toInt()
-                if (count <= 0) break
-                socket.getOutputStream().write(buffer, 0, count)
+                val count = appSide.read(buffer)
+                if (count <= 0L) break
+                socket.getOutputStream().write(buffer, 0, count.toInt())
                 socket.getOutputStream().flush()
             }
             runCatching { downstream.join(TCP_JOIN_TIMEOUT_MS) }
