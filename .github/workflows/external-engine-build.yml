@@ -45,6 +45,12 @@ jobs:
           git checkout "$NETVALVE_COMMIT"
           chmod +x netstack/build-aar.sh
           cd netstack
+
+          # Go 1.25+ requires gomobile/gobind to be recorded as tool dependencies
+          # before gomobile bind is invoked. NetValve's build script installs them,
+          # but the current Go toolchain otherwise rejects the bind step.
+          go get -tool golang.org/x/mobile/cmd/gomobile@latest golang.org/x/mobile/cmd/gobind@latest
+
           ./build-aar.sh arm64
           test -s ../app/libs/netstack.aar
           cp ../app/libs/netstack.aar "$GITHUB_WORKSPACE/netstack.aar"
