@@ -64,7 +64,7 @@ class DnsResponseBuilderTest {
         add(0x12); add(0x34)
         add(0x01); add(0x00)
         add(0x00); add(0x01)
-        repeat(3) { add(0) }
+        repeat(6) { add(0) } // ANCOUNT, NSCOUNT, ARCOUNT
         domain.split('.').forEach { label ->
             add(label.length)
             label.toByteArray(Charsets.US_ASCII).forEach { output += it }
