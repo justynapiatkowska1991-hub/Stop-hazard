@@ -5,6 +5,8 @@ plugins {
 
 val useNetstack =
     (project.findProperty("stophazard.netstack") as String?)?.toBooleanStrictOrNull() ?: false
+val enableNetstackRuntime =
+    (project.findProperty("stophazard.enableNetstack") as String?)?.toBooleanStrictOrNull() ?: false
 
 android {
     namespace = "pl.stophazard.app"
@@ -17,6 +19,7 @@ android {
         versionCode = 1
         versionName = "0.1.0"
         buildConfigField("boolean", "USE_NETSTACK", useNetstack.toString())
+        buildConfigField("boolean", "ENABLE_NETSTACK_RUNTIME", enableNetstackRuntime.toString())
     }
 
     sourceSets {
