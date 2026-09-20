@@ -126,9 +126,9 @@ class NetValveTrafficFilterEngine(
 
             val buffer = ByteArray(RELAY_BUFFER)
             while (running.get()) {
-                val count = appSide.read(buffer)
-                if (count <= 0L) break
-                socket.getOutputStream().write(buffer.copyOf(count.toInt()))
+                val count = appSide.read(buffer).toInt()
+                if (count <= 0) break
+                socket.getOutputStream().write(buffer, 0, count)
                 socket.getOutputStream().flush()
             }
             runCatching { downstream.join(TCP_JOIN_TIMEOUT_MS) }
