@@ -12,13 +12,6 @@ import java.net.InetSocketAddress
 import java.net.Socket
 import java.util.concurrent.atomic.AtomicBoolean
 
-/**
- * Production traffic engine backed by NetValve's gVisor netstack AAR.
- *
- * This adapter is compiled only for the production NetValve build and is
- * intentionally not enabled by default. Runtime activation remains separately
- * gated so a build success can never silently replace the safe disabled engine.
- */
 class NetValveTrafficFilterEngine(
     private val vpnService: VpnService,
 ) : TrafficFilterEngine {
@@ -74,9 +67,7 @@ class NetValveTrafficFilterEngine(
             dstPort: Int,
             conn: TCPConn,
         ) {
-            Thread {
-                relayTcp(dstIP, dstPort, conn)
-            }.start()
+            Thread { relayTcp(dstIP, dstPort, conn) }.start()
         }
 
         override fun handleUDP(
@@ -86,20 +77,16 @@ class NetValveTrafficFilterEngine(
             dstPort: Int,
             conn: UDPConn,
         ) {
-            Thread {
-                relayUdp(dstIP, dstPort, conn)
-            }.start()
+            Thread { relayUdp(dstIP, dstPort, conn) }.start()
         }
 
-        override fun log(level: Int, msg: String) {
-            // Keep production traffic logs out of the app UI for now.
-        }
+        override fun log(level: Int, msg: String) = Unit
 
         private fun relayTcp(destinationHost: String, destinationPort: Int, appSide: TCPConn) {
             var upstream: Socket? = null
             try {
                 val first = ByteArray(RELAY_BUFFER)
-                val firstLength = appSide.read(first).toInt()
+                val firstLength = readTcp(appSide, first)
                 if (firstLength <= 0) return
 
                 val host = detectHost(first, firstLength)
@@ -123,27 +110,45 @@ class NetValveTrafficFilterEngine(
                         while (running.get()) {
                             val count = socket.getInputStream().read(buffer)
                             if (count <= 0) break
-                            appSide.write(buffer.copyOf(count).also { })
+                            appSide.write(buffer.copyOf(count))
                         }
                     } catch (_: Throwable) {
-                        // Closing one direction closes the flow below.
                     }
                 }
                 downstream.start()
 
                 val buffer = ByteArray(RELAY_BUFFER)
                 while (running.get()) {
-                    val count = appSide.read(buffer).toInt()
+                    val count = readTcp(appSide, buffer)
                     if (count <= 0) break
                     socket.getOutputStream().write(buffer, 0, count)
                     socket.getOutputStream().flush()
                 }
                 runCatching { downstream.join(TCP_JOIN_TIMEOUT_MS) }
             } catch (_: Throwable) {
-                // One bad flow must never stop the VPN engine.
             } finally {
                 runCatching { upstream?.close() }
                 runCatching { appSide.close() }
+            }
+        }
+
+        /**
+         * Isolates the gomobile binding quirk seen in the generated AAR.
+         * The pinned NetValve API exposes TCPConn.read(byte[]) as a Long-returning
+         * Java method; reflection here avoids Kotlin signature drift between
+         * gomobile toolchain versions while preserving the same byte[] call.
+         */
+        private fun readTcp(conn: TCPConn, buffer: ByteArray): Int {
+            val method = conn.javaClass.methods.firstOrNull {
+                it.name == "read" &&
+                    it.parameterTypes.size == 1 &&
+                    it.parameterTypes[0] == ByteArray::class.java
+            } ?: return -1
+
+            return try {
+                (method.invoke(conn, buffer) as Number).toInt()
+            } catch (_: Throwable) {
+                -1
             }
         }
 
@@ -164,12 +169,13 @@ class NetValveTrafficFilterEngine(
                         }
                     }
 
-                    val packet = DatagramPacket(
-                        data,
-                        data.size,
-                        InetSocketAddress(destinationHost, destinationPort),
+                    upstream.send(
+                        DatagramPacket(
+                            data,
+                            data.size,
+                            InetSocketAddress(destinationHost, destinationPort),
+                        ),
                     )
-                    upstream.send(packet)
 
                     val responseBuffer = ByteArray(65_535)
                     val response = DatagramPacket(responseBuffer, responseBuffer.size)
@@ -177,7 +183,6 @@ class NetValveTrafficFilterEngine(
                     appSide.send(responseBuffer.copyOf(response.length))
                 }
             } catch (_: Throwable) {
-                // One bad flow must never stop the VPN engine.
             } finally {
                 runCatching { upstream?.close() }
                 runCatching { appSide.close() }
@@ -185,8 +190,7 @@ class NetValveTrafficFilterEngine(
         }
 
         private fun detectHost(data: ByteArray, length: Int): String? {
-            val tlsHost = parseTlsSni(data, length)
-            if (tlsHost != null) return tlsHost
+            parseTlsSni(data, length)?.let { return it }
             return parseHttpHost(data, length)
         }
 
