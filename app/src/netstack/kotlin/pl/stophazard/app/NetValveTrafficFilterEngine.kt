@@ -52,9 +52,21 @@ class NetValveTrafficFilterEngine(
 
     override fun stop() {
         running.set(false)
-        runCatching { tunnel?.close() }
+        // The generated gomobile Tunnel API has changed across binding toolchains.
+        // Use reflection here so the engine can always release the tunnel without
+        // coupling this Kotlin source to a particular generated close()/stop() name.
+        runCatching {
+            val activeTunnel = tunnel
+            if (activeTunnel != null) {
+                activeTunnel.javaClass.methods
+                    .firstOrNull { it.name == "close" && it.parameterTypes.isEmpty() }
+                    ?.invoke(activeTunnel)
+            }
+        }
         tunnel = null
     }
+
+    override fun isRunning(): Boolean = running.get()
 
     private class TrafficHandler(
         private val vpnService: VpnService,
@@ -62,9 +74,9 @@ class NetValveTrafficFilterEngine(
     ) : Handler {
         override fun handleTCP(
             srcIP: String,
-            srcPort: Int,
+            srcPort: Long,
             dstIP: String,
-            dstPort: Int,
+            dstPort: Long,
             conn: TCPConn,
         ) {
             Thread { relayTcp(dstIP, dstPort, conn) }.start()
@@ -80,7 +92,7 @@ class NetValveTrafficFilterEngine(
             Thread { relayUdp(dstIP, dstPort, conn) }.start()
         }
 
-        override fun log(level: Int, msg: String) = Unit
+        override fun log(level: Long, msg: String) = Unit
 
         private fun relayTcp(destinationHost: String, destinationPort: Int, appSide: TCPConn) {
             var upstream: Socket? = null
@@ -124,7 +136,7 @@ class NetValveTrafficFilterEngine(
                     socket.getOutputStream().write(buffer, 0, count)
                     socket.getOutputStream().flush()
                 }
-                runCatching { downstream.join(TCP_JOIN_TIMEOUT_MS) }
+                runCatching { downstream.join(TCP_JOIN_TIMEOUT_MS.toLong()) }
             } catch (_: Throwable) {
             } finally {
                 runCatching { upstream?.close() }
