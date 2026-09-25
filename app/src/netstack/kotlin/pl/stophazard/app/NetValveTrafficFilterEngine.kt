@@ -164,7 +164,9 @@ class NetValveTrafficFilterEngine(
 
                 while (running.get()) {
                     val data = appSide.receive() ?: break
-                    // Force HTTPS traffic away from QUIC/HTTP3 for the test build.\n                    // This makes domain filtering testable through the TCP TLS SNI path.\n                    if (destinationPort == 443) {\n                        continue\n                    }\n                    if (destinationPort == 53) {
+                    // Test build: do not relay QUIC/HTTP3. HTTPS is handled by TCP where SNI can be inspected.
+                    if (destinationPort == 443) continue
+                    if (destinationPort == 53) {
                         val filtered = DnsResponseBuilder.responseFor(data)
                         if (filtered != null) {
                             appSide.send(filtered)
