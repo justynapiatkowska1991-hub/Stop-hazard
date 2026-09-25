@@ -34,9 +34,7 @@ class NetValveTrafficFilterEngine(
                 .setSession("STOP HAZARD")
                 .setMtu(MTU)
                 .addAddress("10.66.0.2", 32)
-                .addAddress("fd00:5a48:2::2", 128)
                 .addRoute("0.0.0.0", 0)
-                .addRoute("::", 0)
                 .addDnsServer("1.1.1.1")
                 .addDnsServer("2606:4700:4700::1111")
                 .establish() ?: return false
@@ -165,7 +163,10 @@ class NetValveTrafficFilterEngine(
                 while (running.get()) {
                     val data = appSide.receive() ?: break
                     // Test build: do not relay QUIC/HTTP3. HTTPS is handled by TCP where SNI can be inspected.
-                    if (destinationPort == 443) continue
+                    if (destinationPort == 443) {
+                        runCatching { appSide.close() }
+                        return
+                    }
                     if (destinationPort == 53) {
                         val filtered = DnsResponseBuilder.responseFor(data)
                         if (filtered != null) {
