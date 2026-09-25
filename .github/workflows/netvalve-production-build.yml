@@ -1,4 +1,5 @@
 name: NetValve isolated runtime test build
+# Rebuild trigger for VPN stability test
 
 on:
   workflow_dispatch:
