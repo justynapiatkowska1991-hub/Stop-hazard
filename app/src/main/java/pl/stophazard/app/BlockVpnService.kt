@@ -14,15 +14,17 @@ class BlockVpnService : VpnService() {
     private var engine: TrafficFilterEngine? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startProtectionNotification()
+        startProtectionNotification("Uruchamianie ochrony…")
         stopExistingEngine()
 
         val selectedEngine = TrafficFilterEngineFactory.create(this)
         engine = selectedEngine
 
+        var failure: Throwable? = null
         val started = try {
             selectedEngine.start()
-        } catch (_: Throwable) {
+        } catch (t: Throwable) {
+            failure = t
             false
         }
 
@@ -30,11 +32,15 @@ class BlockVpnService : VpnService() {
 
         if (!started) {
             engine = null
+            startProtectionNotification(
+                "Nie udało się uruchomić ochrony VPN. Spróbuj ponownie.",
+            )
             stopSelf(startId)
             return START_NOT_STICKY
         }
 
-        return START_NOT_STICKY
+        startProtectionNotification("Ochrona stron hazardowych jest aktywna")
+        return START_STICKY
     }
 
     override fun onRevoke() {
@@ -51,7 +57,7 @@ class BlockVpnService : VpnService() {
         return super.onBind(intent)
     }
 
-    private fun startProtectionNotification() {
+    private fun startProtectionNotification(text: String) {
         val channelId = "stop_hazard_protection"
         val manager = getSystemService(NotificationManager::class.java)
 
@@ -66,7 +72,7 @@ class BlockVpnService : VpnService() {
 
         val notification = Notification.Builder(this, channelId)
             .setContentTitle("STOP HAZARD")
-            .setContentText("Ochrona stron hazardowych jest aktywna")
+            .setContentText(text)
             .setSmallIcon(android.R.drawable.ic_lock_lock)
             .setOngoing(true)
             .build()
