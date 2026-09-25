@@ -1,1 +1,149 @@
-package pl.stophazard.app\n\nimport android.app.Notification\nimport android.app.NotificationChannel\nimport android.app.NotificationManager\nimport android.content.Intent\nimport android.net.VpnService\nimport android.os.Build\nimport android.os.IBinder\nimport android.util.Log\nimport java.io.File\nimport java.util.concurrent.atomic.AtomicBoolean\nimport kotlin.concurrent.thread\n\nclass BlockVpnService : VpnService() {\n    private val running = AtomicBoolean(false)\n    private var engine: TrafficFilterEngine? = null\n    private var heartbeatThread: Thread? = null\n\n    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {\n        installCrashDiagnostics()\n        startProtectionNotification("Uruchamianie ochrony…")\n        stopExistingEngine()\n\n        val selectedEngine = TrafficFilterEngineFactory.create(this)\n        engine = selectedEngine\n\n        val started = try {\n            selectedEngine.start()\n        } catch (t: Throwable) {\n            Log.e(TAG, "ENGINE_START_FAILED", t)\n            writeState("START_FAILED:" + t.javaClass.simpleName)\n            false\n        }\n\n        running.set(started)\n\n        if (!started) {\n            engine = null\n            stopHeartbeat()\n            startProtectionNotification("Nie udało się uruchomić ochrony VPN. Spróbuj ponownie.")\n            writeState("STOPPED_START_FAILED")\n            stopSelf(startId)\n            return START_NOT_STICKY\n        }\n\n        writeState("RUNNING")\n        startHeartbeat()\n        startProtectionNotification("Ochrona stron hazardowych jest aktywna")\n        return START_STICKY\n    }\n\n    override fun onRevoke() {\n        writeState("VPN_REVOKED")\n        startProtectionNotification("VPN został cofnięty przez Androida")\n        Log.e(TAG, "VPN_REVOKED")\n        stopVpn()\n        super.onRevoke()\n    }\n\n    override fun onDestroy() {\n        writeState(if (running.get()) "DESTROYED_WHILE_RUNNING" else "DESTROYED")\n        stopHeartbeat()\n        stopVpn()\n        super.onDestroy()\n    }\n\n    override fun onBind(intent: Intent?): IBinder? = super.onBind(intent)\n\n    private fun startProtectionNotification(text: String) {\n        val channelId = "stop_hazard_protection"\n        val manager = getSystemService(NotificationManager::class.java)\n        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {\n            val channel = NotificationChannel(channelId, "STOP HAZARD — ochrona", NotificationManager.IMPORTANCE_LOW)\n            manager.createNotificationChannel(channel)\n        }\n        val notification = Notification.Builder(this, channelId)\n            .setContentTitle("STOP HAZARD")\n            .setContentText(text)\n            .setSmallIcon(android.R.drawable.ic_lock_lock)\n            .setOngoing(true)\n            .build()\n        startForeground(1001, notification)\n    }\n\n    private fun stopExistingEngine() {\n        val previousEngine = engine ?: return\n        try { previousEngine.stop() } catch (t: Throwable) { Log.w(TAG, "ENGINE_STOP_FAILED", t) }\n        engine = null\n        running.set(false)\n    }\n\n    private fun installCrashDiagnostics() {\n        Thread.setDefaultUncaughtExceptionHandler { thread, error ->\n            Log.e(TAG, "UNCAUGHT_EXCEPTION thread=" + thread.name, error)\n            writeState("UNCAUGHT_EXCEPTION:" + error.javaClass.simpleName)\n            runCatching { startProtectionNotification("Błąd silnika VPN: " + error.javaClass.simpleName) }\n        }\n    }\n\n    private fun startHeartbeat() {\n        stopHeartbeat()\n        heartbeatThread = thread(name = "stop-hazard-heartbeat", isDaemon = true) {\n            while (running.get()) {\n                writeState("HEARTBEAT")\n                try { Thread.sleep(2000) } catch (_: InterruptedException) { break }\n            }\n        }\n    }\n\n    private fun stopHeartbeat() {\n        heartbeatThread?.interrupt()\n        heartbeatThread = null\n    }\n\n    private fun writeState(state: String) {\n        runCatching {\n            val file = File(filesDir, "vpn_state.txt")\n            file.writeText(System.currentTimeMillis().toString() + "|" + state)\n        }\n    }\n\n    companion object { private const val TAG = "STOP_HAZARD_VPN" }\n\n    private fun stopVpn() {\n        stopExistingEngine()\n        stopSelf()\n    }\n}
+package pl.stophazard.app
+
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Intent
+import android.net.VpnService
+import android.os.Build
+import android.os.IBinder
+import android.util.Log
+import java.io.File
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.concurrent.thread
+
+class BlockVpnService : VpnService() {
+    private val running = AtomicBoolean(false)
+    private var engine: TrafficFilterEngine? = null
+    private var heartbeatThread: Thread? = null
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        installCrashDiagnostics()
+        startProtectionNotification("Uruchamianie ochrony…")
+        stopExistingEngine()
+
+        val selectedEngine = TrafficFilterEngineFactory.create(this)
+        engine = selectedEngine
+
+        val started = try {
+            selectedEngine.start()
+        } catch (t: Throwable) {
+            Log.e(TAG, "ENGINE_START_FAILED", t)
+            writeState("START_FAILED:" + t.javaClass.simpleName)
+            false
+        }
+
+        running.set(started)
+
+        if (!started) {
+            engine = null
+            stopHeartbeat()
+            startProtectionNotification("Nie udało się uruchomić ochrony VPN. Spróbuj ponownie.")
+            writeState("STOPPED_START_FAILED")
+            stopSelf(startId)
+            return START_NOT_STICKY
+        }
+
+        writeState("RUNNING")
+        startHeartbeat()
+        startProtectionNotification("Ochrona stron hazardowych jest aktywna")
+        return START_STICKY
+    }
+
+    override fun onRevoke() {
+        writeState("VPN_REVOKED")
+        startProtectionNotification("VPN został cofnięty przez Androida")
+        Log.e(TAG, "VPN_REVOKED")
+        stopVpn()
+        super.onRevoke()
+    }
+
+    override fun onDestroy() {
+        writeState(if (running.get()) "DESTROYED_WHILE_RUNNING" else "DESTROYED")
+        stopHeartbeat()
+        stopVpn()
+        super.onDestroy()
+    }
+
+    override fun onBind(intent: Intent?): IBinder? = super.onBind(intent)
+
+    private fun startProtectionNotification(text: String) {
+        val channelId = "stop_hazard_protection"
+        val manager = getSystemService(NotificationManager::class.java)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                channelId,
+                "STOP HAZARD — ochrona",
+                NotificationManager.IMPORTANCE_LOW,
+            )
+            manager.createNotificationChannel(channel)
+        }
+
+        val notification = Notification.Builder(this, channelId)
+            .setContentTitle("STOP HAZARD")
+            .setContentText(text)
+            .setSmallIcon(android.R.drawable.ic_lock_lock)
+            .setOngoing(true)
+            .build()
+
+        startForeground(1001, notification)
+    }
+
+    private fun stopExistingEngine() {
+        val previousEngine = engine ?: return
+        try {
+            previousEngine.stop()
+        } catch (t: Throwable) {
+            Log.w(TAG, "ENGINE_STOP_FAILED", t)
+        }
+        engine = null
+        running.set(false)
+    }
+
+    private fun installCrashDiagnostics() {
+        Thread.setDefaultUncaughtExceptionHandler { thread, error ->
+            Log.e(TAG, "UNCAUGHT_EXCEPTION thread=" + thread.name, error)
+            writeState("UNCAUGHT_EXCEPTION:" + error.javaClass.simpleName)
+            runCatching {
+                startProtectionNotification("Błąd silnika VPN: " + error.javaClass.simpleName)
+            }
+        }
+    }
+
+    private fun startHeartbeat() {
+        stopHeartbeat()
+        heartbeatThread = thread(name = "stop-hazard-heartbeat", isDaemon = true) {
+            while (running.get()) {
+                writeState("HEARTBEAT")
+                try {
+                    Thread.sleep(2000)
+                } catch (_: InterruptedException) {
+                    break
+                }
+            }
+        }
+    }
+
+    private fun stopHeartbeat() {
+        heartbeatThread?.interrupt()
+        heartbeatThread = null
+    }
+
+    private fun writeState(state: String) {
+        runCatching {
+            File(filesDir, "vpn_state.txt").writeText(
+                System.currentTimeMillis().toString() + "|" + state,
+            )
+        }
+    }
+
+    companion object {
+        private const val TAG = "STOP_HAZARD_VPN"
+    }
+
+    private fun stopVpn() {
+        stopExistingEngine()
+        stopSelf()
+    }
+}
