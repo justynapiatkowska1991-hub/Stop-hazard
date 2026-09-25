@@ -52,9 +52,6 @@ class NetValveTrafficFilterEngine(
 
     override fun stop() {
         running.set(false)
-        // The generated gomobile Tunnel API has changed across binding toolchains.
-        // Use reflection here so the engine can always release the tunnel without
-        // coupling this Kotlin source to a particular generated close()/stop() name.
         runCatching {
             val activeTunnel = tunnel
             if (activeTunnel != null) {
@@ -79,17 +76,17 @@ class NetValveTrafficFilterEngine(
             dstPort: Long,
             conn: TCPConn,
         ) {
-            Thread { relayTcp(dstIP, dstPort, conn) }.start()
+            Thread { relayTcp(dstIP, dstPort.toInt(), conn) }.start()
         }
 
         override fun handleUDP(
             srcIP: String,
-            srcPort: Int,
+            srcPort: Long,
             dstIP: String,
-            dstPort: Int,
+            dstPort: Long,
             conn: UDPConn,
         ) {
-            Thread { relayUdp(dstIP, dstPort, conn) }.start()
+            Thread { relayUdp(dstIP, dstPort.toInt(), conn) }.start()
         }
 
         override fun log(level: Long, msg: String) = Unit
@@ -144,12 +141,6 @@ class NetValveTrafficFilterEngine(
             }
         }
 
-        /**
-         * Isolates the gomobile binding quirk seen in the generated AAR.
-         * The pinned NetValve API exposes TCPConn.read(byte[]) as a Long-returning
-         * Java method; reflection here avoids Kotlin signature drift between
-         * gomobile toolchain versions while preserving the same byte[] call.
-         */
         private fun readTcp(conn: TCPConn, buffer: ByteArray): Int {
             val method = conn.javaClass.methods.firstOrNull {
                 it.name == "read" &&
