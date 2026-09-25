@@ -7,6 +7,7 @@ import android.content.Intent
 import android.net.VpnService
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import java.util.concurrent.atomic.AtomicBoolean
 
 class BlockVpnService : VpnService() {
@@ -14,6 +15,7 @@ class BlockVpnService : VpnService() {
     private var engine: TrafficFilterEngine? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        installCrashDiagnostics()
         startProtectionNotification("Uruchamianie ochrony…")
         stopExistingEngine()
 
@@ -44,6 +46,8 @@ class BlockVpnService : VpnService() {
     }
 
     override fun onRevoke() {
+        startProtectionNotification("VPN został cofnięty przez Androida")
+        Log.e(TAG, "VPN_REVOKED")
         stopVpn()
         super.onRevoke()
     }
@@ -88,6 +92,21 @@ class BlockVpnService : VpnService() {
         }
         engine = null
         running.set(false)
+    }
+
+    private fun installCrashDiagnostics() {
+        Thread.setDefaultUncaughtExceptionHandler { thread, error ->
+            Log.e(TAG, "UNCAUGHT_EXCEPTION thread=${thread.name}", error)
+            runCatching {
+                startProtectionNotification(
+                    "Błąd silnika VPN: ${error.javaClass.simpleName}",
+                )
+            }
+        }
+    }
+
+    companion object {
+        private const val TAG = "STOP_HAZARD_VPN"
     }
 
     private fun stopVpn() {
