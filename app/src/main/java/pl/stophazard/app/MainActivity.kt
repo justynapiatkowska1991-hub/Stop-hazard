@@ -26,6 +26,9 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Aktualizuj lokalną listę domen z oficjalnego rejestru MF.
+        // Pobieranie odbywa się w osobnym wątku i nie blokuje uruchomienia UI.
+        BlockedDomains.refreshFromOfficialRegistry()
         buildUi()
     }
 
