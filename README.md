@@ -19,3 +19,7 @@ Podłączenie rzeczywistego, przetestowanego silnika transportu DNS/TCP/UDP oraz
 4. wyłączenie ochrony przywraca normalny ruch.
 
 Nie należy aktywować ochrony produkcyjnej przed zakończeniem tych testów.
+
+## Audyt bezpieczeństwa integracji
+
+Przed aktywacją silnika należy zapoznać się z [audytem luk filtrowania ruchu](docs/NETSTACK_SECURITY_AUDIT_2026-11.md). W szczególności obecny prototyp nie zapewnia jeszcze pełnego blokowania QUIC/HTTP3, alternatywnych metod DNS ani wszystkich wariantów TLS. Silnik pozostaje domyślnie wyłączony.
