@@ -93,17 +93,15 @@ class NetValveTrafficFilterEngine(
             var upstream: Socket? = null
             try {
                 val first = ByteArray(64 * 1024)
-                var firstLength = readTcp(appSide, first.copyOf(RELAY_BUFFER))
-                if (firstLength <= 0) return
                 // Retain all initial bytes until the TLS ClientHello is complete.
                 val firstChunk = ByteArray(RELAY_BUFFER)
-                val initialLength = readTcp(appSide, firstChunk)
-                if (initialLength <= 0) return
-                firstChunk.copyInto(first, 0, 0, minOf(initialLength, first.size))
-                firstLength = minOf(initialLength, first.size)
+                var firstLength = readTcp(appSide, firstChunk)
+                if (firstLength <= 0) return
+                firstChunk.copyInto(first, 0, 0, minOf(firstLength, first.size))
+                firstLength = minOf(firstLength, first.size)
 
                 var host: String? = parseHttpHost(first, firstLength)
-                if (host == null && firstLength > 0 && (first[0].toInt() and 0xff) == 22) {
+                if (host == null && (first[0].toInt() and 0xff) == 22) {
                     var result = TlsClientHelloParser.parse(first, firstLength)
                     while (result == TlsClientHelloParser.Result.NeedMore && firstLength < first.size && running.get()) {
                         val chunk = ByteArray(minOf(RELAY_BUFFER, first.size - firstLength))
