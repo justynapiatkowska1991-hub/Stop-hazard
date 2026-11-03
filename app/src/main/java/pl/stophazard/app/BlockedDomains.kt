@@ -62,9 +62,18 @@ object BlockedDomains {
 
                 if (connection.responseCode != HttpURLConnection.HTTP_OK) return@Thread
 
-                val builder = DocumentBuilderFactory.newInstance().apply {
+                val factory = DocumentBuilderFactory.newInstance().apply {
                     isNamespaceAware = true
-                }.newDocumentBuilder()
+                    isXIncludeAware = false
+                    setExpandEntityReferences(false)
+                    // Rejestr jest danymi z sieci — parser nie może pobierać
+                    // zewnętrznych encji ani DTD (ochrona przed XXE/SSRF).
+                    setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
+                    setFeature("http://xml.org/sax/features/external-general-entities", false)
+                    setFeature("http://xml.org/sax/features/external-parameter-entities", false)
+                    setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+                }
+                val builder = factory.newDocumentBuilder()
 
                 val document = connection.inputStream.use { builder.parse(it) }
                 val nodes = document.getElementsByTagNameNS("*", "AdresDomeny")
