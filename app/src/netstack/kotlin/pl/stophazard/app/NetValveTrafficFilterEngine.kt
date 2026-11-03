@@ -21,6 +21,7 @@ class NetValveTrafficFilterEngine(
         const val MTU = 1500
         const val RELAY_BUFFER = 16 * 1024
         const val TCP_CONNECT_TIMEOUT_MS = 10_000
+        const val INITIAL_INSPECTION_TIMEOUT_MS = 10_000
         const val TCP_JOIN_TIMEOUT_MS = 2_000
     }
 
@@ -95,7 +96,7 @@ class NetValveTrafficFilterEngine(
                 val first = ByteArray(64 * 1024)
                 // Retain all initial bytes until the TLS ClientHello is complete.
                 val firstChunk = ByteArray(RELAY_BUFFER)
-                var firstLength = readTcp(appSide, firstChunk)
+                var firstLength = readTcpWithTimeout(appSide, firstChunk, INITIAL_INSPECTION_TIMEOUT_MS)
                 if (firstLength <= 0) return
                 firstChunk.copyInto(first, 0, 0, minOf(firstLength, first.size))
                 firstLength = minOf(firstLength, first.size)
@@ -105,7 +106,7 @@ class NetValveTrafficFilterEngine(
                     var result = TlsClientHelloParser.parse(first, firstLength)
                     while (result == TlsClientHelloParser.Result.NeedMore && firstLength < first.size && running.get()) {
                         val chunk = ByteArray(minOf(RELAY_BUFFER, first.size - firstLength))
-                        val count = readTcp(appSide, chunk)
+                        val count = readTcpWithTimeout(appSide, chunk, INITIAL_INSPECTION_TIMEOUT_MS)
                         if (count <= 0) break
                         val copied = minOf(count, first.size - firstLength)
                         chunk.copyInto(first, firstLength, 0, copied)
@@ -153,6 +154,23 @@ class NetValveTrafficFilterEngine(
             } finally {
                 runCatching { upstream?.close() }
                 runCatching { appSide.close() }
+            }
+        }
+
+        /** Reads initial protocol bytes with a hard deadline; regular relay reads remain blocking. */
+        private fun readTcpWithTimeout(conn: TCPConn, buffer: ByteArray, timeoutMs: Long): Int {
+            val method = conn.javaClass.methods.firstOrNull {
+                it.name == "readWithTimeout" &&
+                    it.parameterTypes.size == 2 &&
+                    it.parameterTypes[0] == ByteArray::class.java &&
+                    (it.parameterTypes[1] == java.lang.Long.TYPE ||
+                        it.parameterTypes[1] == java.lang.Long::class.java)
+            } ?: return -1
+
+            return try {
+                (method.invoke(conn, buffer, timeoutMs) as Number).toInt()
+            } catch (_: Throwable) {
+                -1
             }
         }
 
