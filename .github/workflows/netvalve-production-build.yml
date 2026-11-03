@@ -49,6 +49,7 @@ jobs:
           git clone https://github.com/IEAmir/NetValve.git /tmp/NetValve
           cd /tmp/NetValve
           git checkout "$NETVALVE_COMMIT"
+          git apply "$GITHUB_WORKSPACE/patches/netvalve-tcp-read-timeout.patch"
           chmod +x netstack/build-aar.sh
           cd netstack
           go get -tool golang.org/x/mobile/cmd/gomobile@latest golang.org/x/mobile/cmd/gobind@latest
