@@ -55,7 +55,7 @@ class NetValveTrafficFilterEngine(
 
     override fun stop() {
         running.set(false)
-        runCatching { tunnel?.close() }
+        runCatching { tunnel?.stop() }
         tunnel = null
         runCatching { tunInterface?.close() }
         tunInterface = null
@@ -74,17 +74,17 @@ class NetValveTrafficFilterEngine(
             dstPort: Long,
             conn: TCPConn,
         ) {
-            Thread { relayTcp(dstIP, dstPort, conn) }.start()
+            Thread { relayTcp(dstIP, dstPort.toInt(), conn) }.start()
         }
 
         override fun handleUDP(
             srcIP: String,
-            srcPort: Int,
+            srcPort: Long,
             dstIP: String,
-            dstPort: Int,
+            dstPort: Long,
             conn: UDPConn,
         ) {
-            Thread { relayUdp(dstIP, dstPort, conn) }.start()
+            Thread { relayUdp(dstIP, dstPort.toInt(), conn) }.start()
         }
 
         override fun log(level: Long, msg: String) = Unit
