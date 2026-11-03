@@ -1,0 +1,28 @@
+diff --git a/netstack/bridge.go b/netstack/bridge.go
+--- a/netstack/bridge.go
++++ b/netstack/bridge.go
+@@
+ type TCPConn interface {
+ 	Read(p []byte) (int, error)
++	ReadWithTimeout(p []byte, timeoutMillis int64) (int, error)
+ 	Write(p []byte) (int, error)
+ 	Close() error
+ }
+diff --git a/netstack/conn.go b/netstack/conn.go
+--- a/netstack/conn.go
++++ b/netstack/conn.go
+@@
+ func (c *tcpConn) Read(p []byte) (int, error)  { return c.Conn.Read(p) }
++// ReadWithTimeout bounds protocol-inspection reads so incomplete client
++// handshakes cannot pin a Kotlin relay thread indefinitely.
++func (c *tcpConn) ReadWithTimeout(p []byte, timeoutMillis int64) (int, error) {
++	if timeoutMillis <= 0 {
++		return c.Conn.Read(p)
++	}
++	if err := c.Conn.SetReadDeadline(time.Now().Add(time.Duration(timeoutMillis) * time.Millisecond)); err != nil {
++		return 0, err
++	}
++	defer c.Conn.SetReadDeadline(time.Time{})
++	return c.Conn.Read(p)
++}
+ func (c *tcpConn) Write(p []byte) (int, error) { return c.Conn.Write(p) }
