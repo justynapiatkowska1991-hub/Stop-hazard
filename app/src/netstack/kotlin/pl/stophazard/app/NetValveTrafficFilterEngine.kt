@@ -1,6 +1,7 @@
 package pl.stophazard.app
 
 import android.net.VpnService
+import android.os.ParcelFileDescriptor
 import dev.netvalve.bridge.Bridge
 import dev.netvalve.bridge.Handler
 import dev.netvalve.bridge.TCPConn
@@ -25,6 +26,7 @@ class NetValveTrafficFilterEngine(
 
     private val running = AtomicBoolean(false)
     private var tunnel: Tunnel? = null
+    private var tunInterface: ParcelFileDescriptor? = null
 
     override fun start(): Boolean {
         if (!running.compareAndSet(false, true)) return true
@@ -39,13 +41,14 @@ class NetValveTrafficFilterEngine(
                 .addRoute("::", 0)
                 .addDnsServer("1.1.1.1")
                 .addDnsServer("2606:4700:4700::1111")
-                .establish() ?: return false
+                .establish() ?: throw IllegalStateException("Nie udało się utworzyć interfejsu VPN")
 
+            tunInterface = tun
             val handler = TrafficHandler(vpnService, running)
             tunnel = Bridge.newTunnel(tun.fd.toLong(), MTU.toLong(), "RELAY", handler)
             true
         } catch (_: Throwable) {
-            running.set(false)
+            stop()
             false
         }
     }
@@ -54,7 +57,11 @@ class NetValveTrafficFilterEngine(
         running.set(false)
         runCatching { tunnel?.close() }
         tunnel = null
+        runCatching { tunInterface?.close() }
+        tunInterface = null
     }
+
+    override fun isRunning(): Boolean = running.get() && tunnel != null
 
     private class TrafficHandler(
         private val vpnService: VpnService,
