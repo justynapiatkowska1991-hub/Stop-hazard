@@ -92,11 +92,30 @@ class NetValveTrafficFilterEngine(
         private fun relayTcp(destinationHost: String, destinationPort: Int, appSide: TCPConn) {
             var upstream: Socket? = null
             try {
-                val first = ByteArray(RELAY_BUFFER)
-                val firstLength = readTcp(appSide, first)
+                val first = ByteArray(64 * 1024)
+                var firstLength = readTcp(appSide, first.copyOf(RELAY_BUFFER))
                 if (firstLength <= 0) return
+                // Retain all initial bytes until the TLS ClientHello is complete.
+                val firstChunk = ByteArray(RELAY_BUFFER)
+                val initialLength = readTcp(appSide, firstChunk)
+                if (initialLength <= 0) return
+                firstChunk.copyInto(first, 0, 0, minOf(initialLength, first.size))
+                firstLength = minOf(initialLength, first.size)
 
-                val host = detectHost(first, firstLength)
+                var host: String? = parseHttpHost(first, firstLength)
+                if (host == null && firstLength > 0 && (first[0].toInt() and 0xff) == 22) {
+                    var result = TlsClientHelloParser.parse(first, firstLength)
+                    while (result == TlsClientHelloParser.Result.NeedMore && firstLength < first.size && running.get()) {
+                        val chunk = ByteArray(minOf(RELAY_BUFFER, first.size - firstLength))
+                        val count = readTcp(appSide, chunk)
+                        if (count <= 0) break
+                        val copied = minOf(count, first.size - firstLength)
+                        chunk.copyInto(first, firstLength, 0, copied)
+                        firstLength += copied
+                        result = TlsClientHelloParser.parse(first, firstLength)
+                    }
+                    host = (result as? TlsClientHelloParser.Result.Host)?.value
+                }
                 if (host != null && BlockedDomains.isBlocked(host)) return
 
                 upstream = Socket()
