@@ -21,7 +21,7 @@ class NetValveTrafficFilterEngine(
         const val MTU = 1500
         const val RELAY_BUFFER = 16 * 1024
         const val TCP_CONNECT_TIMEOUT_MS = 10_000
-        const val INITIAL_INSPECTION_TIMEOUT_MS = 10_000
+        const val INITIAL_INSPECTION_TIMEOUT_MS = 10_000L
         const val TCP_JOIN_TIMEOUT_MS = 2_000
     }
 
