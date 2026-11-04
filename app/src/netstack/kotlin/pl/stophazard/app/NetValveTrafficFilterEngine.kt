@@ -250,60 +250,6 @@ class NetValveTrafficFilterEngine(
             }
         }
 
-        private fun detectHost(data: ByteArray, length: Int): String? {
-            parseTlsSni(data, length)?.let { return it }
-            return parseHttpHost(data, length)
-        }
 
-        private fun parseTlsSni(data: ByteArray, length: Int): String? {
-            if (length < 5 || data[0].toInt() != 22) return null
-            val recordLength = ((data[3].toInt() and 0xff) shl 8) or (data[4].toInt() and 0xff)
-            if (recordLength + 5 > length) return null
-
-            var p = 5
-            if (p + 4 > length) return null
-            p += 4
-            if (p >= length) return null
-
-            val sessionIdLength = data[p].toInt() and 0xff
-            p += 1 + sessionIdLength
-            if (p + 2 > length) return null
-
-            val cipherSuitesLength = ((data[p].toInt() and 0xff) shl 8) or (data[p + 1].toInt() and 0xff)
-            p += 2 + cipherSuitesLength
-            if (p >= length) return null
-
-            val compressionMethodsLength = data[p].toInt() and 0xff
-            p += 1 + compressionMethodsLength
-            if (p + 2 > length) return null
-
-            val extensionsLength = ((data[p].toInt() and 0xff) shl 8) or (data[p + 1].toInt() and 0xff)
-            p += 2
-            val end = minOf(p + extensionsLength, length)
-
-            while (p + 4 <= end) {
-                val type = ((data[p].toInt() and 0xff) shl 8) or (data[p + 1].toInt() and 0xff)
-                val extLength = ((data[p + 2].toInt() and 0xff) shl 8) or (data[p + 3].toInt() and 0xff)
-                p += 4
-                if (p + extLength > end) return null
-
-                if (type == 0 && extLength >= 5) {
-                    var q = p + 2
-                    if (q + 2 > p + extLength) return null
-                    val nameType = data[q].toInt() and 0xff
-                    q += 1
-                    if (nameType != 0) return null
-                    val nameLength = ((data[q].toInt() and 0xff) shl 8) or (data[q + 1].toInt() and 0xff)
-                    q += 2
-                    if (q + nameLength > p + extLength) return null
-                    return data.copyOfRange(q, q + nameLength)
-                        .toString(Charsets.UTF_8)
-                        .trimEnd('.')
-                        .lowercase()
-                }
-                p += extLength
-            }
-            return null
-        }
     }
 }
