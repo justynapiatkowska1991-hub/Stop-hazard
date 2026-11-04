@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - "app/**"
+      - "patches/netvalve-tcp-read-timeout.patch"
       - ".github/workflows/netvalve-production-build.yml"
       - "docs/EXTERNAL_ENGINE_INTEGRATION_PLAN.md"
 
