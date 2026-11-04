@@ -38,7 +38,9 @@ class HttpRequestInspectorTest {
     fun detectsFragmentedMethodPrefixesAndHeaderTerminator() {
         assertTrue(HttpRequestInspector.looksLikeRequest("CON".toByteArray(), 3))
         assertFalse(HttpRequestInspector.looksLikeRequest("SSH-2.0".toByteArray(), 7))
+        assertFalse(HttpRequestInspector.looksLikeRequest("GET".toByteArray(), 4))
         assertFalse(HttpRequestInspector.hasHeaderTerminator("GET /".toByteArray(), 5))
+        assertFalse(HttpRequestInspector.hasHeaderTerminator("GET".toByteArray(), 4))
         val complete = "GET / HTTP/1.1\r\n\r\n".toByteArray()
         assertTrue(HttpRequestInspector.hasHeaderTerminator(complete, complete.size))
     }
