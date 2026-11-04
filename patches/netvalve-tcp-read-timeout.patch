@@ -1,15 +1,19 @@
 diff --git a/netstack/bridge.go b/netstack/bridge.go
 --- a/netstack/bridge.go
 +++ b/netstack/bridge.go
-@@ -61,6 +61,7 @@ type TCPConn interface {
+@@ -61,5 +61,6 @@
+ type TCPConn interface {
 +	ReadWithTimeout(p []byte, timeoutMillis int64) (int, error)
  	Read(p []byte) (int, error)
  	Write(p []byte) (int, error)
  	Close() error
+ }
 diff --git a/netstack/conn.go b/netstack/conn.go
 --- a/netstack/conn.go
 +++ b/netstack/conn.go
-@@ -14,6 +14,14 @@ type tcpConn struct {
+@@ -12,7 +12,17 @@
+ type tcpConn struct {
+ 	Conn *gonet.TCPConn
  }
  
 +// ReadWithTimeout bounds protocol-inspection reads so incomplete client
