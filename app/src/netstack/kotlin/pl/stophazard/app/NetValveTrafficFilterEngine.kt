@@ -20,6 +20,7 @@ class NetValveTrafficFilterEngine(
     private companion object {
         const val MTU = 1500
         const val RELAY_BUFFER = 16 * 1024
+        const val HTTP_HEADER_MAX_BYTES = 16 * 1024
         const val TCP_CONNECT_TIMEOUT_MS = 10_000
         const val INITIAL_INSPECTION_TIMEOUT_MS = 10_000L
         const val TCP_JOIN_TIMEOUT_MS = 2_000
@@ -101,8 +102,8 @@ class NetValveTrafficFilterEngine(
                 firstChunk.copyInto(first, 0, 0, minOf(firstLength, first.size))
                 firstLength = minOf(firstLength, first.size)
 
-                var host: String? = parseHttpHost(first, firstLength)
-                if (host == null && (first[0].toInt() and 0xff) == 22) {
+                var host: String? = null
+                if ((first[0].toInt() and 0xff) == 22) {
                     var result = TlsClientHelloParser.parse(first, firstLength)
                     while (result == TlsClientHelloParser.Result.NeedMore && firstLength < first.size && running.get()) {
                         val chunk = ByteArray(minOf(RELAY_BUFFER, first.size - firstLength))
@@ -114,6 +115,19 @@ class NetValveTrafficFilterEngine(
                         result = TlsClientHelloParser.parse(first, firstLength)
                     }
                     host = (result as? TlsClientHelloParser.Result.Host)?.value
+                } else if (looksLikeHttpRequest(first, firstLength)) {
+                    // HTTP headers can arrive in multiple TCP reads. Do not forward
+                    // an incomplete request before the Host header has been inspected.
+                    while (!hasHttpHeaderTerminator(first, firstLength)) {
+                        if (firstLength >= HTTP_HEADER_MAX_BYTES) return
+                        val chunk = ByteArray(minOf(RELAY_BUFFER, HTTP_HEADER_MAX_BYTES - firstLength))
+                        val count = readTcpWithTimeout(appSide, chunk, INITIAL_INSPECTION_TIMEOUT_MS)
+                        if (count <= 0) return
+                        val copied = minOf(count, HTTP_HEADER_MAX_BYTES - firstLength)
+                        chunk.copyInto(first, firstLength, 0, copied)
+                        firstLength += copied
+                    }
+                    host = parseHttpHost(first, firstLength)
                 }
                 if (host != null && BlockedDomains.isBlocked(host)) return
 
@@ -234,6 +248,25 @@ class NetValveTrafficFilterEngine(
         private fun detectHost(data: ByteArray, length: Int): String? {
             parseTlsSni(data, length)?.let { return it }
             return parseHttpHost(data, length)
+        }
+
+        private fun looksLikeHttpRequest(data: ByteArray, length: Int): Boolean {
+            if (length <= 0) return false
+            val prefix = data.copyOf(minOf(length, 16)).toString(Charsets.ISO_8859_1)
+            val method = prefix.takeWhile { !it.isWhitespace() }
+            if (method.isEmpty() || method.length > 10) return false
+            val knownMethods = listOf("GET", "POST", "HEAD", "PUT", "DELETE", "OPTIONS", "PATCH", "CONNECT", "TRACE")
+            return knownMethods.any { it.startsWith(method) || method.startsWith(it) }
+        }
+
+        private fun hasHttpHeaderTerminator(data: ByteArray, length: Int): Boolean {
+            if (length < 4) return false
+            for (i in 0..length - 4) {
+                if (data[i] == 13.toByte() && data[i + 1] == 10.toByte() &&
+                    data[i + 2] == 13.toByte() && data[i + 3] == 10.toByte()
+                ) return true
+            }
+            return false
         }
 
         private fun parseHttpHost(data: ByteArray, length: Int): String? {
