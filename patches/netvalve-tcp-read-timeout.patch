@@ -11,7 +11,7 @@ diff --git a/netstack/bridge.go b/netstack/bridge.go
 diff --git a/netstack/conn.go b/netstack/conn.go
 --- a/netstack/conn.go
 +++ b/netstack/conn.go
-@@ -12,7 +12,19 @@
+@@ -12,7 +12,20 @@
  type tcpConn struct {
  	Conn *gonet.TCPConn
  }
