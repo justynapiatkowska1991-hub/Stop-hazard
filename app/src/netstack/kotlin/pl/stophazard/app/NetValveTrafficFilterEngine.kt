@@ -107,7 +107,7 @@ class NetValveTrafficFilterEngine(
                     while (result == TlsClientHelloParser.Result.NeedMore && firstLength < first.size && running.get()) {
                         val chunk = ByteArray(minOf(RELAY_BUFFER, first.size - firstLength))
                         val count = readTcpWithTimeout(appSide, chunk, INITIAL_INSPECTION_TIMEOUT_MS)
-                        if (count <= 0) break
+                        if (count <= 0) return
                         val copied = minOf(count, first.size - firstLength)
                         chunk.copyInto(first, firstLength, 0, copied)
                         firstLength += copied
