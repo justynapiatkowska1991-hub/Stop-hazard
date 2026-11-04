@@ -59,11 +59,16 @@ jobs:
           mkdir -p "$GITHUB_WORKSPACE/app/libs"
           cp ../app/libs/netstack.aar "$GITHUB_WORKSPACE/app/libs/netstack.aar"
 
-      - name: Run STOP HAZARD unit tests
-        run: gradle --no-daemon test
+      - name: Verify Gradle project and run STOP HAZARD unit tests
+        run: |
+          test -f "$GITHUB_WORKSPACE/settings.gradle.kts"
+          test -f "$GITHUB_WORKSPACE/app/build.gradle.kts"
+          gradle --no-daemon --project-dir "$GITHUB_WORKSPACE" :app:testDebugUnitTest --stacktrace
 
       - name: Build compile-only APK (VPN runtime explicitly disabled)
-        run: gradle --no-daemon clean assembleDebug -Pstophazard.netstack=true -Pstophazard.enableNetstack=false
+        run: |
+          gradle --no-daemon --project-dir "$GITHUB_WORKSPACE" clean :app:assembleDebug \
+            -Pstophazard.netstack=true -Pstophazard.enableNetstack=false --stacktrace
 
       - name: Upload compile-only APK (not for traffic-blocking tests)
         uses: actions/upload-artifact@v4
