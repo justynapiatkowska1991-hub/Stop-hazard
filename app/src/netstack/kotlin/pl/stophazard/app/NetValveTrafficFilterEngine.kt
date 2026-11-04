@@ -278,8 +278,23 @@ class NetValveTrafficFilterEngine(
             val text = runCatching {
                 data.copyOf(length).toString(Charsets.ISO_8859_1)
             }.getOrNull() ?: return null
-            val match = Regex("(?im)^Host\\s*:\\s*([^\\s:]+)").find(text) ?: return null
-            return match.groupValues[1].trimEnd('.').lowercase()
+            // CONNECT carries its target in the request line; proxies do not
+            // have to repeat it in a Host header.
+            val requestLine = text.lineSequence().firstOrNull()?.trim().orEmpty()
+            val connectTarget = Regex("(?i)^CONNECT\\s+([^\\s/]+)").find(requestLine)
+                ?.groupValues?.get(1)
+            val absoluteTarget = Regex("(?i)^[A-Z]+\\s+https?://([^/:?#\\s]+)")
+                .find(requestLine)?.groupValues?.get(1)
+            val headerHost = Regex("(?im)^Host\\s*:\\s*([^\\s:]+)")
+                .find(text)?.groupValues?.get(1)
+            val rawHost = connectTarget ?: absoluteTarget ?: headerHost ?: return null
+            // Remove an optional port from CONNECT authority.
+            val host = if (rawHost.startsWith("[")) {
+                rawHost.substringAfter('[').substringBefore(']')
+            } else {
+                rawHost.substringBefore(':')
+            }
+            return host.trimEnd('.').lowercase().takeIf { it.isNotBlank() }
         }
 
         private fun parseTlsSni(data: ByteArray, length: Int): String? {
