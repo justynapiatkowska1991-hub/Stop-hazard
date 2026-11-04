@@ -24,6 +24,19 @@ class TlsClientHelloParserTest {
     }
 
     @Test
+    fun acceptsClientHelloSplitAtEveryTcpByteBoundary() {
+        val hello = clientHello("sts.pl")
+        for (length in 1 until hello.size) {
+            assertEquals(
+                "Expected NeedMore at byte boundary $length",
+                TlsClientHelloParser.Result.NeedMore,
+                TlsClientHelloParser.parse(hello, length),
+            )
+        }
+        assertEquals(TlsClientHelloParser.Result.Host("sts.pl"), TlsClientHelloParser.parse(hello))
+    }
+
+    @Test
     fun rejectsMalformedRecordLength() {
         val malformed = byteArrayOf(22, 3, 3, 0x7f, 0xff.toByte())
         assertEquals(TlsClientHelloParser.Result.Invalid, TlsClientHelloParser.parse(malformed))
