@@ -10,7 +10,7 @@ internal object HttpRequestInspector {
     )
 
     fun looksLikeRequest(data: ByteArray, length: Int): Boolean {
-        if (length <= 0) return false
+        if (length <= 0 || length > data.size) return false
         val prefix = data.copyOf(minOf(length, 16)).toString(Charsets.ISO_8859_1)
         val method = prefix.takeWhile { !it.isWhitespace() }
         if (method.isEmpty() || method.length > 10) return false
@@ -18,7 +18,7 @@ internal object HttpRequestInspector {
     }
 
     fun hasHeaderTerminator(data: ByteArray, length: Int): Boolean {
-        if (length < 4) return false
+        if (length < 4 || length > data.size) return false
         for (i in 0..length - 4) {
             if (data[i] == 13.toByte() && data[i + 1] == 10.toByte() &&
                 data[i + 2] == 13.toByte() && data[i + 3] == 10.toByte()
