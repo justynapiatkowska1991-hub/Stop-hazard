@@ -114,6 +114,11 @@ class NetValveTrafficFilterEngine(
                         firstLength += copied
                         result = TlsClientHelloParser.parse(first, firstLength)
                     }
+                    // Never pass a TLS flow upstream if its ClientHello is
+                    // malformed or still incomplete at the inspection limit.
+                    if (result == TlsClientHelloParser.Result.Invalid ||
+                        result == TlsClientHelloParser.Result.NeedMore
+                    ) return
                     host = (result as? TlsClientHelloParser.Result.Host)?.value
                 } else if (looksLikeHttpRequest(first, firstLength)) {
                     // HTTP headers can arrive in multiple TCP reads. Do not forward
