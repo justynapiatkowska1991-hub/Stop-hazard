@@ -120,10 +120,10 @@ class NetValveTrafficFilterEngine(
                         result == TlsClientHelloParser.Result.NeedMore
                     ) return
                     host = (result as? TlsClientHelloParser.Result.Host)?.value
-                } else if (looksLikeHttpRequest(first, firstLength)) {
+                } else if (HttpRequestInspector.looksLikeRequest(first, firstLength)) {
                     // HTTP headers can arrive in multiple TCP reads. Do not forward
                     // an incomplete request before the Host header has been inspected.
-                    while (!hasHttpHeaderTerminator(first, firstLength)) {
+                    while (!HttpRequestInspector.hasHeaderTerminator(first, firstLength)) {
                         if (firstLength >= HTTP_HEADER_MAX_BYTES) return
                         val chunk = ByteArray(minOf(RELAY_BUFFER, HTTP_HEADER_MAX_BYTES - firstLength))
                         val count = readTcpWithTimeout(appSide, chunk, INITIAL_INSPECTION_TIMEOUT_MS)
@@ -132,7 +132,7 @@ class NetValveTrafficFilterEngine(
                         chunk.copyInto(first, firstLength, 0, copied)
                         firstLength += copied
                     }
-                    host = parseHttpHost(first, firstLength)
+                    host = HttpRequestInspector.parseHost(first, firstLength)
                 }
                 if (host != null && BlockedDomains.isBlocked(host)) return
 
@@ -253,48 +253,6 @@ class NetValveTrafficFilterEngine(
         private fun detectHost(data: ByteArray, length: Int): String? {
             parseTlsSni(data, length)?.let { return it }
             return parseHttpHost(data, length)
-        }
-
-        private fun looksLikeHttpRequest(data: ByteArray, length: Int): Boolean {
-            if (length <= 0) return false
-            val prefix = data.copyOf(minOf(length, 16)).toString(Charsets.ISO_8859_1)
-            val method = prefix.takeWhile { !it.isWhitespace() }
-            if (method.isEmpty() || method.length > 10) return false
-            val knownMethods = listOf("GET", "POST", "HEAD", "PUT", "DELETE", "OPTIONS", "PATCH", "CONNECT", "TRACE")
-            return knownMethods.any { it.startsWith(method) || method.startsWith(it) }
-        }
-
-        private fun hasHttpHeaderTerminator(data: ByteArray, length: Int): Boolean {
-            if (length < 4) return false
-            for (i in 0..length - 4) {
-                if (data[i] == 13.toByte() && data[i + 1] == 10.toByte() &&
-                    data[i + 2] == 13.toByte() && data[i + 3] == 10.toByte()
-                ) return true
-            }
-            return false
-        }
-
-        private fun parseHttpHost(data: ByteArray, length: Int): String? {
-            val text = runCatching {
-                data.copyOf(length).toString(Charsets.ISO_8859_1)
-            }.getOrNull() ?: return null
-            // CONNECT carries its target in the request line; proxies do not
-            // have to repeat it in a Host header.
-            val requestLine = text.lineSequence().firstOrNull()?.trim().orEmpty()
-            val connectTarget = Regex("(?i)^CONNECT\\s+([^\\s/]+)").find(requestLine)
-                ?.groupValues?.get(1)
-            val absoluteTarget = Regex("(?i)^[A-Z]+\\s+https?://([^/:?#\\s]+)")
-                .find(requestLine)?.groupValues?.get(1)
-            val headerHost = Regex("(?im)^Host\\s*:\\s*([^\\s:]+)")
-                .find(text)?.groupValues?.get(1)
-            val rawHost = connectTarget ?: absoluteTarget ?: headerHost ?: return null
-            // Remove an optional port from CONNECT authority.
-            val host = if (rawHost.startsWith("[")) {
-                rawHost.substringAfter('[').substringBefore(']')
-            } else {
-                rawHost.substringBefore(':')
-            }
-            return host.trimEnd('.').lowercase().takeIf { it.isNotBlank() }
         }
 
         private fun parseTlsSni(data: ByteArray, length: Int): String? {
