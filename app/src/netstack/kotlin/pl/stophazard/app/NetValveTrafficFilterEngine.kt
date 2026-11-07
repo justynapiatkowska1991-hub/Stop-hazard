@@ -19,6 +19,7 @@ class NetValveTrafficFilterEngine(
 ) : TrafficFilterEngine {
 
     private companion object {
+        const val TAG = "StopHazardNetValve"
         const val MTU = 1500
         const val RELAY_BUFFER = 16 * 1024
         const val HTTP_HEADER_MAX_BYTES = 16 * 1024
