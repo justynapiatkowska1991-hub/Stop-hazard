@@ -45,6 +45,18 @@ jobs:
           gradle --no-daemon --project-dir "$GITHUB_WORKSPACE" \
             clean :app:assembleDebug --stacktrace
 
+      - name: Verify normal APK keeps NetValve runtime disabled
+        run: |
+          BUILD_CONFIG="app/build/generated/source/buildConfig/debug/pl/stophazard/app/BuildConfig.java"
+          test -s "$BUILD_CONFIG"
+          grep -F "USE_NETSTACK = false" "$BUILD_CONFIG"
+          grep -F "ENABLE_NETSTACK_RUNTIME = false" "$BUILD_CONFIG"
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          PACKAGE="$("$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p" | head -1)"
+          echo "Normal APK applicationId: $PACKAGE"
+          test "$PACKAGE" = "pl.stophazard.app"
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
