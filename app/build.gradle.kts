@@ -13,7 +13,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "pl.stophazard.app"
+        applicationId = if (useNetstack) "pl.stophazard.app.test" else "pl.stophazard.app"
         // NetValve's production AAR requires API 29+. Keep the normal build at 26,
         // while the NetValve production candidate is built with the required floor.
         minSdk = if (useNetstack) 29 else 26
