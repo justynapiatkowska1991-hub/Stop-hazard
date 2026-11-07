@@ -176,22 +176,17 @@ class NetValveTrafficFilterEngine(
             }
         }
 
-        /** Reads initial protocol bytes with a hard deadline; regular relay reads remain blocking. */
-        private fun readTcpWithTimeout(conn: TCPConn, buffer: ByteArray, timeoutMs: Long): Int {
-            val method = conn.javaClass.methods.firstOrNull {
-                it.name == "readWithTimeout" &&
-                    it.parameterTypes.size == 2 &&
-                    it.parameterTypes[0] == ByteArray::class.java &&
-                    (it.parameterTypes[1] == java.lang.Long.TYPE ||
-                        it.parameterTypes[1] == java.lang.Long::class.java)
-            } ?: return -1
-
-            return try {
-                (method.invoke(conn, buffer, timeoutMs) as Number).toInt()
-            } catch (_: Throwable) {
-                -1
-            }
-        }
+        /**
+         * The pinned gomobile TCPConn binding exposes read(byte[]) but does not
+         * expose readWithTimeout(byte[], long). Calling a guessed timeout method
+         * made every TCP flow fail before it could be relayed. Use the actual
+         * supported read method; this runs on the per-connection relay thread.
+         *
+         * The timeout parameter is retained at the call sites for readability,
+         * but is not enforceable through this NetValve binding.
+         */
+        private fun readTcpWithTimeout(conn: TCPConn, buffer: ByteArray, timeoutMs: Long): Int =
+            readTcp(conn, buffer)
 
         /**
          * Isolates the gomobile binding quirk seen in the generated AAR.
