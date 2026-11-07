@@ -2,6 +2,7 @@ package pl.stophazard.app
 
 import android.net.VpnService
 import android.os.ParcelFileDescriptor
+import android.util.Log
 import dev.netvalve.bridge.Bridge
 import dev.netvalve.bridge.Handler
 import dev.netvalve.bridge.TCPConn
@@ -76,6 +77,7 @@ class NetValveTrafficFilterEngine(
             dstPort: Long,
             conn: TCPConn,
         ) {
+            Log.d(TAG, "TCP flow: $dstIP:$dstPort")
             Thread { relayTcp(dstIP, dstPort.toInt(), conn) }.start()
         }
 
@@ -86,10 +88,17 @@ class NetValveTrafficFilterEngine(
             dstPort: Long,
             conn: UDPConn,
         ) {
+            Log.d(TAG, "UDP flow: $dstIP:$dstPort")
             Thread { relayUdp(dstIP, dstPort.toInt(), conn) }.start()
         }
 
-        override fun log(level: Long, msg: String) = Unit
+        override fun log(level: Long, msg: String) {
+            when (level.toInt()) {
+                0, 1 -> Log.e(TAG, "NetValve: $msg")
+                2 -> Log.w(TAG, "NetValve: $msg")
+                else -> Log.d(TAG, "NetValve: $msg")
+            }
+        }
 
         private fun relayTcp(destinationHost: String, destinationPort: Int, appSide: TCPConn) {
             var upstream: Socket? = null
@@ -186,7 +195,12 @@ class NetValveTrafficFilterEngine(
          * but is not enforceable through this NetValve binding.
          */
         private fun readTcpWithTimeout(conn: TCPConn, buffer: ByteArray, timeoutMs: Long): Int =
-            readTcp(conn, buffer)
+            try {
+                conn.readWithTimeout(buffer, timeoutMs).toInt()
+            } catch (error: Throwable) {
+                Log.e(TAG, "TCP timed read failed", error)
+                -1
+            }
 
         /**
          * Isolates the gomobile binding quirk seen in the generated AAR.
@@ -194,19 +208,13 @@ class NetValveTrafficFilterEngine(
          * Java method; reflection here avoids Kotlin signature drift between
          * gomobile toolchain versions while preserving the same byte[] call.
          */
-        private fun readTcp(conn: TCPConn, buffer: ByteArray): Int {
-            val method = conn.javaClass.methods.firstOrNull {
-                it.name == "read" &&
-                    it.parameterTypes.size == 1 &&
-                    it.parameterTypes[0] == ByteArray::class.java
-            } ?: return -1
-
-            return try {
-                (method.invoke(conn, buffer) as Number).toInt()
-            } catch (_: Throwable) {
+        private fun readTcp(conn: TCPConn, buffer: ByteArray): Int =
+            try {
+                conn.read(buffer).toInt()
+            } catch (error: Throwable) {
+                Log.e(TAG, "TCP read failed", error)
                 -1
             }
-        }
 
         private fun relayUdp(destinationHost: String, destinationPort: Int, appSide: UDPConn) {
             var upstream: DatagramSocket? = null
@@ -238,13 +246,16 @@ class NetValveTrafficFilterEngine(
                     upstream.receive(response)
                     appSide.send(responseBuffer.copyOf(response.length))
                 }
-            } catch (_: Throwable) {
+            } catch (error: Throwable) {
+                Log.e(TAG, "UDP relay failed for $destinationHost:$destinationPort", error)
             } finally {
                 runCatching { upstream?.close() }
                 runCatching { appSide.close() }
             }
         }
 
-
+        private companion object {
+            const val TAG = "StopHazardNetValve"
+        }
     }
 }
