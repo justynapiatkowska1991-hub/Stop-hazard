@@ -6,6 +6,10 @@ Silnik NetValve pozostaje eksperymentalny. Nie włączaj `ENABLE_NETSTACK_RUNTIM
 
 ## Poprawki wykonane
 
+- TCP: odczyt początkowy korzysta z limitu czasu dodanego do przypiętego bindingu gomobile; parser TLS składa fragmenty ClientHello i rekordy TLS przed przekazaniem pierwszych bajtów do serwera.
+- HTTP: żądanie i nagłówki są buforowane do końca nagłówka przed przekazaniem dalej, aby umożliwić odczyt pola Host.
+- UDP: wysyłanie datagramów do serwera i odbieranie odpowiedzi odbywają się niezależnie. Brak odpowiedzi na pojedynczy datagram nie powinien już blokować całego skojarzenia UDP. Zmiana wymaga jeszcze testu na urządzeniu.
+
 - Dodano brakującą implementację `TrafficFilterEngine.isRunning()` w adapterze NetValve.
 - Nieudane utworzenie interfejsu VPN nie kończy już metody `start()` z pozostawioną flagą `running=true`.
 - Deskryptor interfejsu TUN jest przechowywany i zamykany podczas sprzątania.
@@ -23,7 +27,7 @@ Obecny filtr DNS jest wywoływany tylko dla UDP na porcie 53. Nie obejmuje autom
 
 ### 3. Niepełna widoczność TLS
 
-Adapter sprawdza pierwszy odczyt strumienia TCP. ClientHello może być podzielony na kilka odczytów, a TLS Encrypted Client Hello (ECH) może ukrywać nazwę serwera. Gdy parser nie rozpozna hosta, obecna logika przekazuje połączenie dalej.
+Parser zbiera fragmenty ClientHello i rekordy TLS z kolejnych odczytów TCP przed przekazaniem danych dalej. Nie rozwiązuje to jednak problemu TLS Encrypted Client Hello (ECH), braku SNI ani wszystkich nietypowych wariantów protokołu. Gdy parser nie rozpozna nazwy hosta, obecna logika przepuszcza połączenie.
 
 ### 4. Połączenia bez nazwy domenowej
 
@@ -42,6 +46,10 @@ Trasa IPv6 jest kierowana do tunelu, ale musi zostać osobno sprawdzona pod kąt
 5. Dodać testy integracyjne DNS, TCP, UDP, IPv4 i IPv6.
 6. Przeprowadzić testy na fizycznym telefonie przez Wi-Fi i LTE/5G: zwykłe strony, STS, Fortuna, inne domeny testowe, przełączanie sieci, wyłączenie ochrony i restart.
 7. Dopiero po udokumentowaniu wyników rozważyć włączenie runtime.
+
+## Bieżąca weryfikacja
+
+Ostatnia zmiana UDP rozdziela nadawanie i odbiór datagramów, ale jest na razie potwierdzona wyłącznie kompilacją/testami CI. Nie ma jeszcze wyniku rzeczywistego testu Wi-Fi i sieci komórkowej na telefonie Redmi 15C z Androidem 15. Nie oznaczaj tego wariantu jako gotowego do użycia.
 
 ## Kryterium wydania
 
