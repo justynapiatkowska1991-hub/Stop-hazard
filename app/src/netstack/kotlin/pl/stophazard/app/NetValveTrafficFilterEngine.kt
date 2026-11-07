@@ -35,6 +35,7 @@ class NetValveTrafficFilterEngine(
         if (!running.compareAndSet(false, true)) return true
 
         return try {
+            Log.i(TAG, "Starting NetValve VPN engine")
             val tun = vpnService.Builder()
                 .setSession("STOP HAZARD")
                 .setMtu(MTU)
@@ -47,10 +48,13 @@ class NetValveTrafficFilterEngine(
                 .establish() ?: throw IllegalStateException("Nie udało się utworzyć interfejsu VPN")
 
             tunInterface = tun
+            Log.i(TAG, "Android TUN established; fd=${tun.fd}, mtu=$MTU")
             val handler = TrafficHandler(vpnService, running)
             tunnel = Bridge.newTunnel(tun.fd.toLong(), MTU.toLong(), "RELAY", handler)
+            Log.i(TAG, "NetValve bridge created successfully")
             true
-        } catch (_: Throwable) {
+        } catch (error: Throwable) {
+            Log.e(TAG, "NetValve startup failed", error)
             stop()
             false
         }
@@ -59,8 +63,10 @@ class NetValveTrafficFilterEngine(
     override fun stop() {
         running.set(false)
         runCatching { tunnel?.stop() }
+            .onFailure { Log.e(TAG, "NetValve tunnel stop failed", it) }
         tunnel = null
         runCatching { tunInterface?.close() }
+            .onFailure { Log.e(TAG, "TUN interface close failed", it) }
         tunInterface = null
     }
 
@@ -146,12 +152,16 @@ class NetValveTrafficFilterEngine(
                 if (host != null && BlockedDomains.isBlocked(host)) return
 
                 upstream = Socket()
-                if (!vpnService.protect(upstream)) return
+                if (!vpnService.protect(upstream)) {
+                    Log.e(TAG, "VpnService.protect returned false for TCP $destinationHost:$destinationPort")
+                    return
+                }
                 upstream.tcpNoDelay = true
                 upstream.connect(
                     InetSocketAddress(destinationHost, destinationPort),
                     TCP_CONNECT_TIMEOUT_MS,
                 )
+                Log.d(TAG, "TCP upstream connected: $destinationHost:$destinationPort")
 
                 val socket = upstream
                 socket.getOutputStream().write(first, 0, firstLength)
@@ -165,7 +175,8 @@ class NetValveTrafficFilterEngine(
                             if (count <= 0) break
                             appSide.write(buffer.copyOf(count))
                         }
-                    } catch (_: Throwable) {
+                    } catch (error: Throwable) {
+                        Log.w(TAG, "TCP downstream relay ended for $destinationHost:$destinationPort", error)
                     }
                 }
                 downstream.start()
@@ -178,7 +189,8 @@ class NetValveTrafficFilterEngine(
                     socket.getOutputStream().flush()
                 }
                 runCatching { downstream.join(TCP_JOIN_TIMEOUT_MS.toLong()) }
-            } catch (_: Throwable) {
+            } catch (error: Throwable) {
+                Log.e(TAG, "TCP relay failed for $destinationHost:$destinationPort", error)
             } finally {
                 runCatching { upstream?.close() }
                 runCatching { appSide.close() }
@@ -220,7 +232,10 @@ class NetValveTrafficFilterEngine(
             var upstream: DatagramSocket? = null
             try {
                 upstream = DatagramSocket()
-                if (!vpnService.protect(upstream)) return
+                if (!vpnService.protect(upstream)) {
+                    Log.e(TAG, "VpnService.protect returned false for UDP $destinationHost:$destinationPort")
+                    return
+                }
                 upstream.soTimeout = TCP_CONNECT_TIMEOUT_MS
 
                 while (running.get()) {
