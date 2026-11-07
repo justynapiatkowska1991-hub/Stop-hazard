@@ -226,42 +226,74 @@ class NetValveTrafficFilterEngine(
 
         private fun relayUdp(destinationHost: String, destinationPort: Int, appSide: UDPConn) {
             var upstream: DatagramSocket? = null
+            val relayActive = AtomicBoolean(true)
+            val appSideWriteLock = Any()
+            var responseThread: Thread? = null
+
             try {
-                upstream = DatagramSocket()
-                if (!vpnService.protect(upstream)) {
+                val socket = DatagramSocket()
+                upstream = socket
+                if (!vpnService.protect(socket)) {
                     Log.e(TAG, "VpnService.protect returned false for UDP $destinationHost:$destinationPort")
                     return
                 }
-                upstream.soTimeout = TCP_CONNECT_TIMEOUT_MS
 
-                while (running.get()) {
+                // Restrict replies to this flow's destination and let request and
+                // response traffic progress independently. A UDP service is not
+                // required to answer every datagram; waiting inline for each reply
+                // used to stall the whole association after the first lost packet.
+                socket.connect(InetSocketAddress(destinationHost, destinationPort))
+                socket.soTimeout = 1_000
+                Log.d(TAG, "UDP upstream connected: $destinationHost:$destinationPort")
+
+                responseThread = Thread({
+                    val responseBuffer = ByteArray(65_535)
+                    while (running.get() && relayActive.get()) {
+                        try {
+                            val response = DatagramPacket(responseBuffer, responseBuffer.size)
+                            socket.receive(response)
+                            if (running.get() && relayActive.get()) {
+                                synchronized(appSideWriteLock) {
+                                    appSide.send(responseBuffer.copyOf(response.length))
+                                }
+                            }
+                        } catch (_: java.net.SocketTimeoutException) {
+                            // Periodically re-check shutdown state.
+                        } catch (error: Throwable) {
+                            if (running.get() && relayActive.get()) {
+                                Log.w(TAG, "UDP response relay ended for $destinationHost:$destinationPort", error)
+                            }
+                            break
+                        }
+                    }
+                }, "StopHazard-UDP-$destinationPort").apply {
+                    isDaemon = true
+                    start()
+                }
+
+                while (running.get() && relayActive.get()) {
                     val data = appSide.receive() ?: break
                     if (destinationPort == 53) {
                         val filtered = DnsResponseBuilder.responseFor(data)
                         if (filtered != null) {
-                            appSide.send(filtered)
+                            synchronized(appSideWriteLock) {
+                                appSide.send(filtered)
+                            }
                             continue
                         }
                     }
 
-                    upstream.send(
-                        DatagramPacket(
-                            data,
-                            data.size,
-                            InetSocketAddress(destinationHost, destinationPort),
-                        ),
-                    )
-
-                    val responseBuffer = ByteArray(65_535)
-                    val response = DatagramPacket(responseBuffer, responseBuffer.size)
-                    upstream.receive(response)
-                    appSide.send(responseBuffer.copyOf(response.length))
+                    socket.send(DatagramPacket(data, data.size))
                 }
             } catch (error: Throwable) {
-                Log.e(TAG, "UDP relay failed for $destinationHost:$destinationPort", error)
+                if (running.get() && relayActive.get()) {
+                    Log.e(TAG, "UDP relay failed for $destinationHost:$destinationPort", error)
+                }
             } finally {
+                relayActive.set(false)
                 runCatching { upstream?.close() }
                 runCatching { appSide.close() }
+                runCatching { responseThread?.join(1_000) }
             }
         }
 
