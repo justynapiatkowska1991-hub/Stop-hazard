@@ -1,3 +1,4 @@
+// Separate package ID keeps experimental NetValve APK isolated from the normal app.
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
