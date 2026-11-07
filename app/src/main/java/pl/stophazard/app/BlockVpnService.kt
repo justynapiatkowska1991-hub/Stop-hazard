@@ -44,7 +44,8 @@ class BlockVpnService : VpnService() {
 
         val started = try {
             selectedEngine.start() && selectedEngine.isRunning()
-        } catch (_: Throwable) {
+        } catch (error: Throwable) {
+            android.util.Log.e("StopHazardVpn", "VPN engine start threw an exception", error)
             false
         }
 
