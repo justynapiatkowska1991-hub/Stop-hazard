@@ -62,6 +62,26 @@ jobs:
           mkdir -p "$GITHUB_WORKSPACE/app/libs"
           cp ../app/libs/netstack.aar "$GITHUB_WORKSPACE/app/libs/netstack.aar"
 
+      - name: Inspect generated gomobile API
+        run: |
+          mkdir -p "$RUNNER_TEMP/netvalve-api"
+          unzip -q app/libs/netstack.aar -d "$RUNNER_TEMP/netvalve-api"
+          echo "=== AAR contents ==="
+          find "$RUNNER_TEMP/netvalve-api" -maxdepth 2 -type f -print
+          echo "=== classes.jar entries ==="
+          jar tf "$RUNNER_TEMP/netvalve-api/classes.jar" | grep -E 'TCPConn|UDPConn|Bridge|Tunnel|Handler' | head -80 || true
+          echo "=== generated TCPConn signatures ==="
+          javap -classpath "$RUNNER_TEMP/netvalve-api/classes.jar" -public dev.netvalve.bridge.TCPConn || true
+          echo "=== generated Bridge signatures ==="
+          javap -classpath "$RUNNER_TEMP/netvalve-api/classes.jar" -public dev.netvalve.bridge.Bridge || true
+
+      - name: Upload NetValve AAR for API inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: stop-hazard-netvalve-aar-api-inspection
+          path: app/libs/netstack.aar
+          if-no-files-found: error
+
       - name: Run tests and build experimental APK with VPN runtime enabled
         run: |
           gradle --no-daemon --project-dir "$GITHUB_WORKSPACE" clean :app:testDebugUnitTest :app:assembleDebug \
