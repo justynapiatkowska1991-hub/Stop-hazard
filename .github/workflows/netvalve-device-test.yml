@@ -71,9 +71,12 @@ jobs:
           echo "=== classes.jar entries ==="
           jar tf "$RUNNER_TEMP/netvalve-api/classes.jar" | grep -E 'TCPConn|UDPConn|Bridge|Tunnel|Handler' | head -80 || true
           echo "=== generated TCPConn signatures ==="
-          javap -classpath "$RUNNER_TEMP/netvalve-api/classes.jar" -public dev.netvalve.bridge.TCPConn || true
+          javap -classpath "$RUNNER_TEMP/netvalve-api/classes.jar" -public dev.netvalve.bridge.TCPConn | tee "$RUNNER_TEMP/netvalve-api/TCPConn.txt"
+          grep -F "read(byte[])" "$RUNNER_TEMP/netvalve-api/TCPConn.txt"
+          grep -F "readWithTimeout(byte[], long)" "$RUNNER_TEMP/netvalve-api/TCPConn.txt"
           echo "=== generated Bridge signatures ==="
-          javap -classpath "$RUNNER_TEMP/netvalve-api/classes.jar" -public dev.netvalve.bridge.Bridge || true
+          javap -classpath "$RUNNER_TEMP/netvalve-api/classes.jar" -public dev.netvalve.bridge.Bridge | tee "$RUNNER_TEMP/netvalve-api/Bridge.txt"
+          grep -F "newTunnel(long, long, java.lang.String, dev.netvalve.bridge.Handler)" "$RUNNER_TEMP/netvalve-api/Bridge.txt"
 
       - name: Upload NetValve AAR for API inspection
         uses: actions/upload-artifact@v4
