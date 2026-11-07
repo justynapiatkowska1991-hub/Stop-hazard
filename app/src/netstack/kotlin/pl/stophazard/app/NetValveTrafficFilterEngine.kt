@@ -101,9 +101,10 @@ class NetValveTrafficFilterEngine(
 
         override fun log(level: Long, msg: String) {
             when (level.toInt()) {
-                0, 1 -> Log.e(TAG, "NetValve: $msg")
+                0 -> Log.d(TAG, "NetValve: $msg")
+                1 -> Log.i(TAG, "NetValve: $msg")
                 2 -> Log.w(TAG, "NetValve: $msg")
-                else -> Log.d(TAG, "NetValve: $msg")
+                else -> Log.e(TAG, "NetValve: $msg")
             }
         }
 
@@ -199,13 +200,9 @@ class NetValveTrafficFilterEngine(
         }
 
         /**
-         * The pinned gomobile TCPConn binding exposes read(byte[]) but does not
-         * expose readWithTimeout(byte[], long). Calling a guessed timeout method
-         * made every TCP flow fail before it could be relayed. Use the actual
-         * supported read method; this runs on the per-connection relay thread.
-         *
-         * The timeout parameter is retained at the call sites for readability,
-         * but is not enforceable through this NetValve binding.
+         * Uses the readWithTimeout(byte[], long) method added to the pinned
+         * NetValve gomobile binding. A timeout prevents an incomplete TLS
+         * ClientHello or HTTP header from holding this relay thread indefinitely.
          */
         private fun readTcpWithTimeout(conn: TCPConn, buffer: ByteArray, timeoutMs: Long): Int =
             try {
@@ -216,10 +213,8 @@ class NetValveTrafficFilterEngine(
             }
 
         /**
-         * Isolates the gomobile binding quirk seen in the generated AAR.
-         * The pinned NetValve API exposes TCPConn.read(byte[]) as a Long-returning
-         * Java method; reflection here avoids Kotlin signature drift between
-         * gomobile toolchain versions while preserving the same byte[] call.
+         * Reads application-side TCP data using the Long-returning method
+         * exposed by the generated gomobile AAR.
          */
         private fun readTcp(conn: TCPConn, buffer: ByteArray): Int =
             try {
