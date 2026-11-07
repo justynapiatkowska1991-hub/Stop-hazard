@@ -39,13 +39,13 @@ Trasa IPv6 jest kierowana do tunelu, ale musi zostać osobno sprawdzona pod kąt
 
 ## Kolejność prac przed aktywacją
 
-1. Dodać buforowanie i składanie danych TLS przed analizą ClientHello; obsłużyć wiele rekordów/fragmentów lub bezpiecznie oznaczać nieznany host.
-2. Dodać testy parsera HTTP Host i TLS SNI, w tym fragmentację i błędne pakiety.
-3. Zaprojektować kontrolę QUIC/UDP 443 oraz jawnie zdecydować, czy wymuszamy fallback do TCP (z możliwym wpływem na aplikacje).
-4. Zaprojektować obsługę DNS TCP i udokumentować ograniczenia DoT/DoH/ECH.
-5. Dodać testy integracyjne DNS, TCP, UDP, IPv4 i IPv6.
-6. Przeprowadzić testy na fizycznym telefonie przez Wi-Fi i LTE/5G: zwykłe strony, STS, Fortuna, inne domeny testowe, przełączanie sieci, wyłączenie ochrony i restart.
-7. Dopiero po udokumentowaniu wyników rozważyć włączenie runtime.
+1. [x] Dodać składanie fragmentów ClientHello i rekordów TLS przed przekazaniem pierwszych bajtów do serwera.
+2. [x] Dodać testy parsera HTTP Host i TLS SNI, w tym fragmentację i błędne pakiety.
+3. [ ] Zaprojektować kontrolę QUIC/UDP 443 oraz jawnie zdecydować, czy wymuszamy fallback do TCP (z możliwym wpływem na aplikacje).
+4. [ ] Zaprojektować obsługę DNS TCP i udokumentować ograniczenia DoT/DoH/ECH.
+5. [ ] Dodać testy integracyjne DNS, TCP, UDP, IPv4 i IPv6; obecne testy jednostkowe nie zastępują testów pełnego przepływu.
+6. [ ] Przeprowadzić testy na fizycznym telefonie przez Wi-Fi i LTE/5G: zwykłe strony, STS, Fortuna, inne domeny testowe, przełączanie sieci, wyłączenie ochrony i restart.
+7. [ ] Dopiero po udokumentowaniu wyników rozważyć włączenie runtime.
 
 ## Bieżąca weryfikacja
 
