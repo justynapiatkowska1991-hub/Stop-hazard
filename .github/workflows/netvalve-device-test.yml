@@ -2,6 +2,11 @@ name: STOP HAZARD experimental NetValve device test
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - "app/**"
+      - "patches/netvalve-tcp-read-timeout.patch"
+      - ".github/workflows/netvalve-device-test.yml"
 
 permissions:
   contents: read
