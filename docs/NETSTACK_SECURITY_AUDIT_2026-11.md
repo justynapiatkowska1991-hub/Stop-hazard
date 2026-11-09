@@ -21,6 +21,25 @@ Silnik NetValve pozostaje eksperymentalny. Nie włączaj `ENABLE_NETSTACK_RUNTIM
 
 Ruch UDP jest przekazywany bez inspekcji nazwy domeny. Dotyczy to m.in. QUIC/HTTP/3 na UDP 443. Klient może więc ominąć kontrolę hosta opartą o HTTP Host i TLS SNI.
 
+### Decyzja projektowa: QUIC / UDP 443
+
+Nie wdrażamy globalnego blokowania UDP/443 jako pierwszej poprawki. Taki skrót może wymusić fallback przeglądarki do TCP, ale może też pogorszyć działanie lub zerwać połączenia aplikacji, które używają QUIC bez poprawnego fallbacku. Nie wolno zakładać, że wszystkie aplikacje zachowają się jak przeglądarka.
+
+Rozważane warianty:
+
+- **Odrzucanie całego UDP/443** — proste, ale szerokie w skutkach; wymaga jawnego testu popularnych aplikacji i pomiaru czasu fallbacku. Nie jest domyślnie zaakceptowane.
+- **Inspekcja QUIC Initial i odczyt SNI** — bardziej selektywna, ale wymaga poprawnej obsługi QUIC v1/v2, ochrony pakietów Initial, fragmentacji, retransmisji i wersji protokołu. Samo wyszukanie tekstu domeny w datagramie nie jest bezpiecznym parserem.
+- **Brak zmian / przepuszczanie UDP/443** — zachowuje kompatybilność, ale pozostawia obejście blokady przez HTTP/3.
+
+**Kierunek:** najpierw przygotować osobny, wyłączony domyślnie tryb eksperymentalny dla UDP/443, a następnie porównać selektywną inspekcję QUIC z kontrolowanym odrzucaniem UDP/443 na emulatorze i urządzeniu. Nie zmieniać zachowania zwykłego wydania, dopóki testy nie potwierdzą fallbacku oraz działania aplikacji korzystających z UDP. Każdy wariant musi mieć łatwy, sprawdzony mechanizm wyłączenia ochrony.
+
+Minimalna macierz testów przed wyborem:
+1. Chrome/Android: strona obsługująca HTTP/3 oraz strona działająca wyłącznie po TCP.
+2. YouTube i aplikacje bankowe: logowanie, odtwarzanie/odświeżanie i powrót do aplikacji.
+3. STS, Fortuna i domeny testowe: sprawdzenie, czy blokada nie zależy wyłącznie od DNS.
+4. Wi-Fi → LTE/5G → Wi-Fi, utrata sieci, ponowne połączenie i zatrzymanie VPN.
+5. Porównanie czasu ładowania i błędów z ochroną wyłączoną oraz w każdym wariancie eksperymentalnym.
+
 ### 2. DNS poza klasycznym UDP/53
 
 Obecny filtr DNS jest wywoływany tylko dla UDP na porcie 53. Nie obejmuje automatycznie DNS przez TCP/53, DNS-over-TLS (853), DNS-over-HTTPS ani własnych resolverów aplikacji.
