@@ -51,7 +51,9 @@ class DnsTcpFrameDecoderTest {
         val decoder = DnsTcpFrameDecoder()
         decoder.feed(input.copyOfRange(0, 5))
         decoder.reset()
-        assertArrayEquals(listOf(input), decoder.feed(input))
+        val decoded = decoder.feed(input)
+        assertEquals(1, decoded.size)
+        assertArrayEquals(input, decoded.single())
     }
 
     private fun frame(message: ByteArray): ByteArray =
