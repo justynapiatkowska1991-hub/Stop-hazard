@@ -24,6 +24,21 @@ object DnsTcpMessageCodec {
         return byteArrayOf((response.size ushr 8).toByte(), response.size.toByte()) + response
     }
 
+    /**
+     * Confirms that an upstream DNS/TCP frame is a response to the given query.
+     * Transaction IDs are checked so an unrelated or stale frame is never
+     * delivered as the answer to the current serialized exchange.
+     */
+    fun isResponseFor(queryFrame: ByteArray, responseFrame: ByteArray): Boolean {
+        if (parseQuery(queryFrame) == null || responseFrame.size < 14) return false
+        val responseLength = u16(responseFrame, 0)
+        if (responseLength < 12 || responseLength != responseFrame.size - 2) return false
+        val queryId = u16(queryFrame, 2)
+        val responseId = u16(responseFrame, 2)
+        val flags = u16(responseFrame, 4)
+        return queryId == responseId && (flags and 0x8000) != 0
+    }
+
     private fun u16(bytes: ByteArray, offset: Int): Int =
         ((bytes[offset].toInt() and 0xff) shl 8) or (bytes[offset + 1].toInt() and 0xff)
 }
