@@ -46,7 +46,7 @@ Obecny filtr DNS dla UDP działa na porcie 53. Dodano kodek ramek DNS-over-TCP, 
 
 ### 3. Kolejność odpowiedzi DNS-over-TCP
 
-Eksperymentalny przekaźnik może obsługiwać kilka zapytań w jednym strumieniu. Odpowiedzi z serwera upstream są przekazywane w osobnym wątku, natomiast odpowiedź NXDOMAIN dla zablokowanego zapytania jest zapisywana lokalnie od razu. Przy kilku zapytaniach wysłanych potokowo może to spowodować, że lokalna odpowiedź na późniejsze zapytanie dotrze przed odpowiedzią upstream na wcześniejsze zapytanie. To ryzyko naruszenia kolejności odpowiedzi w strumieniu DNS-over-TCP. Przed użyciem tej ścieżki trzeba dodać mechanizm zachowania kolejności odpowiedzi i testy dla mieszanego ciągu zapytań dozwolonych/zablokowanych, także gdy upstream odpowiada z opóźnieniem. Do tego czasu ścieżka pozostaje eksperymentalna i nie może być włączona w wydaniu.
+Wprowadzono serialną obsługę wymian: po wysłaniu dozwolonego zapytania przekaźnik odczytuje jedną kompletną odpowiedź upstream i przekazuje ją aplikacji, zanim przejdzie do kolejnej ramki. Zablokowane zapytanie otrzymuje lokalny NXDOMAIN w tym samym porządku. Ogranicza to przepustowość zapytań potokowych, ale usuwa znany wyścig między lokalnymi odpowiedziami a odpowiedziami upstream. Dodano limit 15 sekund na odpowiedź i walidację długości ramki upstream. Nadal wymagane są testy end-to-end, w tym opóźnione odpowiedzi i wiele mieszanych zapytań, oraz test na fizycznym telefonie. Ścieżka pozostaje eksperymentalna.
 
 ### 3. Niepełna widoczność TLS
 
