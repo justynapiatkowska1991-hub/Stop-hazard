@@ -261,6 +261,10 @@ class NetValveTrafficFilterEngine(
                             // before allowing the next query upstream. This trades
                             // pipelining throughput for deterministic response order.
                             val response = readDnsTcpResponse(input) ?: return
+                            if (!DnsTcpMessageCodec.isResponseFor(frame, response)) {
+                                Log.e(TAG, "Upstream DNS/TCP response did not match the current query")
+                                return
+                            }
                             appSide.write(response)
                         }
                     }
