@@ -3,9 +3,10 @@ package pl.stophazard.app
 /**
  * Codec for DNS-over-TCP messages (two-byte network-order length prefix).
  *
- * This is deliberately a transport-independent building block. It is not yet
- * connected to the VPN relay; DNS-over-TCP remains unsupported until a
- * bidirectional stream integration and device tests are completed.
+ * This codec validates complete length-prefixed DNS frames and creates local
+ * NXDOMAIN responses for blocked queries. The experimental VPN relay uses it
+ * through DnsTcpFrameFilter; end-to-end and physical-device validation remain
+ * required before this path can be considered reliable.
  */
 object DnsTcpMessageCodec {
     fun parseQuery(frame: ByteArray): DnsPacketFilter.Query? {
