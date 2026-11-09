@@ -46,6 +46,29 @@ class DnsTcpMessageCodecTest {
         assertNull(DnsTcpMessageCodec.parseQuery(byteArrayOf(0, 3, 1, 2, 3)))
     }
 
+    @Test
+    fun acceptsResponseWithMatchingTransactionId() {
+        val queryFrame = frame(query("google.com"))
+        val responseFrame = queryFrame.copyOf().also { it[4] = 0x81.toByte() }
+        assertEquals(true, DnsTcpMessageCodec.isResponseFor(queryFrame, responseFrame))
+    }
+
+    @Test
+    fun rejectsResponseWithDifferentTransactionId() {
+        val queryFrame = frame(query("google.com"))
+        val responseFrame = queryFrame.copyOf().also {
+            it[2] = 0x56
+            it[4] = 0x81.toByte()
+        }
+        assertEquals(false, DnsTcpMessageCodec.isResponseFor(queryFrame, responseFrame))
+    }
+
+    @Test
+    fun rejectsUpstreamDnsQueryInsteadOfResponse() {
+        val queryFrame = frame(query("google.com"))
+        assertEquals(false, DnsTcpMessageCodec.isResponseFor(queryFrame, queryFrame))
+    }
+
     private fun frame(message: ByteArray): ByteArray =
         byteArrayOf((message.size ushr 8).toByte(), message.size.toByte()) + message
 
