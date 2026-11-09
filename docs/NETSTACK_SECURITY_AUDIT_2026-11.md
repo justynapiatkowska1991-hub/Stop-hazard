@@ -42,7 +42,7 @@ Minimalna macierz testów przed wyborem:
 
 ### 2. DNS poza klasycznym UDP/53
 
-Obecny filtr DNS jest wywoływany tylko dla UDP na porcie 53. Dodano niezależny od transportu kodek ramek DNS-over-TCP oraz inkrementalny dekoder strumienia z testami fragmentacji prefiksu i treści, wielu wiadomości w jednym odczycie oraz zachowania niepełnej końcówki. Elementy te nadal nie są podłączone do przekaźnika strumieni TCP. Nie obejmuje to DNS przez TCP/53 w działającym VPN, DNS-over-TLS (853), DNS-over-HTTPS ani własnych resolverów aplikacji.
+Obecny filtr DNS dla UDP działa na porcie 53. Dodano kodek ramek DNS-over-TCP, inkrementalny dekoder strumienia oraz podłączono eksperymentalną ścieżkę portu 53/TCP do przekaźnika. Dekoder obsługuje fragmentację prefiksu i treści, wiele wiadomości w jednym odczycie oraz niepełną końcówkę. Ta ścieżka nie ma jeszcze testów end-to-end ani potwierdzenia na urządzeniu. Nie obejmuje DNS-over-TLS (853), DNS-over-HTTPS ani własnych resolverów aplikacji.
 
 ### 3. Niepełna widoczność TLS
 
@@ -61,7 +61,7 @@ Trasa IPv6 jest kierowana do tunelu, ale musi zostać osobno sprawdzona pod kąt
 1. [x] Dodać składanie fragmentów ClientHello i rekordów TLS przed przekazaniem pierwszych bajtów do serwera.
 2. [x] Dodać testy parsera HTTP Host i TLS SNI, w tym fragmentację i błędne pakiety.
 3. [ ] Zaprojektować kontrolę QUIC/UDP 443 oraz jawnie zdecydować, czy wymuszamy fallback do TCP (z możliwym wpływem na aplikacje).
-4. [ ] Podłączyć kodek i dekoder DNS-over-TCP do dwukierunkowego przekaźnika TCP (w tym wiele zapytań w jednym strumieniu i fragmentację ramek); udokumentować ograniczenia DoT/DoH/ECH.
+4. [x] Podłączyć kodek i dekoder DNS-over-TCP do eksperymentalnego przekaźnika portu 53/TCP; [ ] dodać testy end-to-end i sprawdzić wiele zapytań, fragmentację oraz odpowiedzi na urządzeniu; udokumentować ograniczenia DoT/DoH/ECH.
 5. [ ] Dodać testy integracyjne DNS, TCP, UDP, IPv4 i IPv6; obecne testy jednostkowe nie zastępują testów pełnego przepływu.
 6. [ ] Przeprowadzić testy na fizycznym telefonie przez Wi-Fi i LTE/5G: zwykłe strony, STS, Fortuna, inne domeny testowe, przełączanie sieci, wyłączenie ochrony i restart.
 7. [ ] Dopiero po udokumentowaniu wyników rozważyć włączenie runtime.
