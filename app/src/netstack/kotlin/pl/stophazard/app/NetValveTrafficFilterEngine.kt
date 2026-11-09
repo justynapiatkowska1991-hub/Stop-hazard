@@ -26,6 +26,7 @@ class NetValveTrafficFilterEngine(
         const val TCP_CONNECT_TIMEOUT_MS = 10_000
         const val INITIAL_INSPECTION_TIMEOUT_MS = 10_000L
         const val TCP_JOIN_TIMEOUT_MS = 2_000
+        const val DNS_TCP_RESPONSE_TIMEOUT_MS = 15_000
     }
 
     private val running = AtomicBoolean(false)
@@ -209,10 +210,13 @@ class NetValveTrafficFilterEngine(
          * TCP fragmentation and coalescing; only complete DNS frames are
          * inspected. This path is experimental until exercised on a device.
          */
+        /**
+         * Filters classic DNS-over-TCP queries serially. Waiting for each
+         * allowed upstream response before processing the next frame preserves
+         * response order when blocked queries are answered locally.
+         */
         private fun relayDnsTcp(destinationHost: String, appSide: TCPConn) {
             var upstream: Socket? = null
-            val appSideWriteLock = Any()
-            var downstream: Thread? = null
             try {
                 val socket = Socket()
                 upstream = socket
@@ -221,34 +225,18 @@ class NetValveTrafficFilterEngine(
                     return
                 }
                 socket.tcpNoDelay = true
+                socket.soTimeout = DNS_TCP_RESPONSE_TIMEOUT_MS
                 socket.connect(
                     InetSocketAddress(destinationHost, 53),
                     TCP_CONNECT_TIMEOUT_MS,
                 )
                 Log.d(TAG, "DNS/TCP upstream connected: $destinationHost:53")
 
-                downstream = Thread({
-                    val buffer = ByteArray(RELAY_BUFFER)
-                    try {
-                        while (running.get()) {
-                            val count = socket.getInputStream().read(buffer)
-                            if (count <= 0) break
-                            synchronized(appSideWriteLock) {
-                                appSide.write(buffer.copyOf(count))
-                            }
-                        }
-                    } catch (error: Throwable) {
-                        if (running.get()) {
-                            Log.w(TAG, "DNS/TCP downstream relay ended for $destinationHost:53", error)
-                        }
-                    }
-                }, "StopHazard-DNS-TCP-downstream").apply {
-                    isDaemon = true
-                    start()
-                }
-
+                val input = socket.getInputStream()
+                val output = socket.getOutputStream()
                 val decoder = DnsTcpStreamDecoder()
                 val buffer = ByteArray(RELAY_BUFFER)
+
                 while (running.get()) {
                     val count = readTcp(appSide, buffer)
                     if (count <= 0) break
@@ -256,23 +244,64 @@ class NetValveTrafficFilterEngine(
                     for (frame in frames) {
                         val decision = DnsTcpFrameFilter.inspect(frame)
                         if (decision.blocked) {
-                            synchronized(appSideWriteLock) {
-                                appSide.write(decision.frame)
-                            }
+                            appSide.write(decision.frame)
                             Log.i(TAG, "Blocked DNS/TCP query")
                         } else {
-                            socket.getOutputStream().write(decision.frame)
-                            socket.getOutputStream().flush()
+                            // The client side of this flow should send queries.
+                            // Do not forward an unrecognized/non-query frame and
+                            // then wait for a response that may never arrive.
+                            if (DnsTcpMessageCodec.parseQuery(frame) == null) {
+                                Log.w(TAG, "Closing DNS/TCP flow containing a non-query frame")
+                                return
+                            }
+                            output.write(frame)
+                            output.flush()
+
+                            // Read exactly one complete length-prefixed response
+                            // before allowing the next query upstream. This trades
+                            // pipelining throughput for deterministic response order.
+                            val response = readDnsTcpResponse(input) ?: return
+                            appSide.write(response)
                         }
                     }
                 }
             } catch (error: Throwable) {
-                Log.e(TAG, "DNS/TCP relay failed for $destinationHost:53", error)
+                if (running.get()) {
+                    Log.e(TAG, "DNS/TCP relay failed for $destinationHost:53", error)
+                }
             } finally {
                 runCatching { upstream?.close() }
                 runCatching { appSide.close() }
-                runCatching { downstream?.join(TCP_JOIN_TIMEOUT_MS.toLong()) }
             }
+        }
+
+        private fun readDnsTcpResponse(input: java.io.InputStream): ByteArray? {
+            val prefix = ByteArray(2)
+            if (!readFully(input, prefix)) return null
+            val length = ((prefix[0].toInt() and 0xff) shl 8) or
+                (prefix[1].toInt() and 0xff)
+            if (length < 12) throw IllegalStateException("Invalid upstream DNS/TCP length: $length")
+            val frame = ByteArray(length + 2)
+            prefix.copyInto(frame)
+            if (!readFully(input, frame, 2, length)) return null
+            return frame
+        }
+
+        private fun readFully(
+            input: java.io.InputStream,
+            target: ByteArray,
+            offset: Int = 0,
+            length: Int = target.size,
+        ): Boolean {
+            var position = offset
+            val end = offset + length
+            while (position < end) {
+                val count = input.read(target, position, end - position)
+                if (count < 0) return false
+                if (count == 0) continue
+                position += count
+            }
+            return true
         }
 
         /**
