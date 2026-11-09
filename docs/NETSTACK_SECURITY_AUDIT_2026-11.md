@@ -44,6 +44,10 @@ Minimalna macierz testów przed wyborem:
 
 Obecny filtr DNS dla UDP działa na porcie 53. Dodano kodek ramek DNS-over-TCP, inkrementalny dekoder strumienia oraz podłączono eksperymentalną ścieżkę portu 53/TCP do przekaźnika. Dekoder obsługuje fragmentację prefiksu i treści, wiele wiadomości w jednym odczycie oraz niepełną końcówkę. Osobne testy jednostkowe sprawdzają decyzję filtra: NXDOMAIN dla zablokowanych zapytań oraz niezmienione przekazanie dozwolonych zapytań i odpowiedzi. Nadal brakuje testów end-to-end i potwierdzenia na urządzeniu. Nie obejmuje DNS-over-TLS (853), DNS-over-HTTPS ani własnych resolverów aplikacji.
 
+### 3. Kolejność odpowiedzi DNS-over-TCP
+
+Eksperymentalny przekaźnik może obsługiwać kilka zapytań w jednym strumieniu. Odpowiedzi z serwera upstream są przekazywane w osobnym wątku, natomiast odpowiedź NXDOMAIN dla zablokowanego zapytania jest zapisywana lokalnie od razu. Przy kilku zapytaniach wysłanych potokowo może to spowodować, że lokalna odpowiedź na późniejsze zapytanie dotrze przed odpowiedzią upstream na wcześniejsze zapytanie. To ryzyko naruszenia kolejności odpowiedzi w strumieniu DNS-over-TCP. Przed użyciem tej ścieżki trzeba dodać mechanizm zachowania kolejności odpowiedzi i testy dla mieszanego ciągu zapytań dozwolonych/zablokowanych, także gdy upstream odpowiada z opóźnieniem. Do tego czasu ścieżka pozostaje eksperymentalna i nie może być włączona w wydaniu.
+
 ### 3. Niepełna widoczność TLS
 
 Parser zbiera fragmenty ClientHello i rekordy TLS z kolejnych odczytów TCP przed przekazaniem danych dalej. Nie rozwiązuje to jednak problemu TLS Encrypted Client Hello (ECH), braku SNI ani wszystkich nietypowych wariantów protokołu. Gdy parser nie rozpozna nazwy hosta, obecna logika przepuszcza połączenie.
