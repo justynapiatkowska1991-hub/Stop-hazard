@@ -61,7 +61,7 @@ Trasa IPv6 jest kierowana do tunelu, ale musi zostać osobno sprawdzona pod kąt
 1. [x] Dodać składanie fragmentów ClientHello i rekordów TLS przed przekazaniem pierwszych bajtów do serwera.
 2. [x] Dodać testy parsera HTTP Host i TLS SNI, w tym fragmentację i błędne pakiety.
 3. [ ] Zaprojektować kontrolę QUIC/UDP 443 oraz jawnie zdecydować, czy wymuszamy fallback do TCP (z możliwym wpływem na aplikacje).
-4. [ ] Podłączyć przetestowany kodek DNS-over-TCP do dwukierunkowego przekaźnika TCP (w tym wiele zapytań w jednym strumieniu i fragmentację ramek); udokumentować ograniczenia DoT/DoH/ECH.
+4. [ ] Podłączyć kodek i dekoder DNS-over-TCP do dwukierunkowego przekaźnika TCP (w tym wiele zapytań w jednym strumieniu i fragmentację ramek); udokumentować ograniczenia DoT/DoH/ECH.
 5. [ ] Dodać testy integracyjne DNS, TCP, UDP, IPv4 i IPv6; obecne testy jednostkowe nie zastępują testów pełnego przepływu.
 6. [ ] Przeprowadzić testy na fizycznym telefonie przez Wi-Fi i LTE/5G: zwykłe strony, STS, Fortuna, inne domeny testowe, przełączanie sieci, wyłączenie ochrony i restart.
 7. [ ] Dopiero po udokumentowaniu wyników rozważyć włączenie runtime.
