@@ -254,14 +254,14 @@ class NetValveTrafficFilterEngine(
                     if (count <= 0) break
                     val frames = decoder.feed(buffer.copyOf(count))
                     for (frame in frames) {
-                        val blockedResponse = DnsTcpMessageCodec.blockedResponse(frame)
-                        if (blockedResponse != null) {
+                        val decision = DnsTcpFrameFilter.inspect(frame)
+                        if (decision.blocked) {
                             synchronized(appSideWriteLock) {
-                                appSide.write(blockedResponse)
+                                appSide.write(decision.frame)
                             }
                             Log.i(TAG, "Blocked DNS/TCP query")
                         } else {
-                            socket.getOutputStream().write(frame)
+                            socket.getOutputStream().write(decision.frame)
                             socket.getOutputStream().flush()
                         }
                     }
