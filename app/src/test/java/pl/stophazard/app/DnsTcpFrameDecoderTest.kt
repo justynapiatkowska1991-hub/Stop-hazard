@@ -35,7 +35,9 @@ class DnsTcpFrameDecoderTest {
         val result = decoder.feed(first + second.copyOfRange(0, 4))
         assertEquals(1, result.size)
         assertArrayEquals(first, result.single())
-        assertArrayEquals(listOf(second), decoder.feed(second.copyOfRange(4, second.size)))
+        val remainder = decoder.feed(second.copyOfRange(4, second.size))
+        assertEquals(1, remainder.size)
+        assertArrayEquals(second, remainder.single())
     }
 
     @Test(expected = IllegalArgumentException::class)
