@@ -42,7 +42,7 @@ Minimalna macierz testów przed wyborem:
 
 ### 2. DNS poza klasycznym UDP/53
 
-Obecny filtr DNS jest wywoływany tylko dla UDP na porcie 53. Dodano niezależny od transportu kodek ramek DNS-over-TCP z testami, ale nie jest on jeszcze podłączony do przekaźnika strumieni TCP. Nie obejmuje to DNS przez TCP/53 w działającym VPN, DNS-over-TLS (853), DNS-over-HTTPS ani własnych resolverów aplikacji.
+Obecny filtr DNS jest wywoływany tylko dla UDP na porcie 53. Dodano niezależny od transportu kodek ramek DNS-over-TCP oraz inkrementalny dekoder strumienia z testami fragmentacji prefiksu i treści, wielu wiadomości w jednym odczycie oraz zachowania niepełnej końcówki. Elementy te nadal nie są podłączone do przekaźnika strumieni TCP. Nie obejmuje to DNS przez TCP/53 w działającym VPN, DNS-over-TLS (853), DNS-over-HTTPS ani własnych resolverów aplikacji.
 
 ### 3. Niepełna widoczność TLS
 
