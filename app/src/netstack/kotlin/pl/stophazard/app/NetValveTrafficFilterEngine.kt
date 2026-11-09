@@ -109,6 +109,11 @@ class NetValveTrafficFilterEngine(
         }
 
         private fun relayTcp(destinationHost: String, destinationPort: Int, appSide: TCPConn) {
+            if (destinationPort == 53) {
+                relayDnsTcp(destinationHost, appSide)
+                return
+            }
+
             var upstream: Socket? = null
             try {
                 val first = ByteArray(64 * 1024)
@@ -196,6 +201,77 @@ class NetValveTrafficFilterEngine(
             } finally {
                 runCatching { upstream?.close() }
                 runCatching { appSide.close() }
+            }
+        }
+
+        /**
+         * Filters classic DNS-over-TCP queries. The stream decoder handles
+         * TCP fragmentation and coalescing; only complete DNS frames are
+         * inspected. This path is experimental until exercised on a device.
+         */
+        private fun relayDnsTcp(destinationHost: String, appSide: TCPConn) {
+            var upstream: Socket? = null
+            val appSideWriteLock = Any()
+            var downstream: Thread? = null
+            try {
+                val socket = Socket()
+                upstream = socket
+                if (!vpnService.protect(socket)) {
+                    Log.e(TAG, "VpnService.protect returned false for DNS/TCP $destinationHost:53")
+                    return
+                }
+                socket.tcpNoDelay = true
+                socket.connect(
+                    InetSocketAddress(destinationHost, 53),
+                    TCP_CONNECT_TIMEOUT_MS,
+                )
+                Log.d(TAG, "DNS/TCP upstream connected: $destinationHost:53")
+
+                downstream = Thread({
+                    val buffer = ByteArray(RELAY_BUFFER)
+                    try {
+                        while (running.get()) {
+                            val count = socket.getInputStream().read(buffer)
+                            if (count <= 0) break
+                            synchronized(appSideWriteLock) {
+                                appSide.write(buffer.copyOf(count))
+                            }
+                        }
+                    } catch (error: Throwable) {
+                        if (running.get()) {
+                            Log.w(TAG, "DNS/TCP downstream relay ended for $destinationHost:53", error)
+                        }
+                    }
+                }, "StopHazard-DNS-TCP-downstream").apply {
+                    isDaemon = true
+                    start()
+                }
+
+                val decoder = DnsTcpStreamDecoder()
+                val buffer = ByteArray(RELAY_BUFFER)
+                while (running.get()) {
+                    val count = readTcp(appSide, buffer)
+                    if (count <= 0) break
+                    val frames = decoder.feed(buffer.copyOf(count))
+                    for (frame in frames) {
+                        val blockedResponse = DnsTcpMessageCodec.blockedResponse(frame)
+                        if (blockedResponse != null) {
+                            synchronized(appSideWriteLock) {
+                                appSide.write(blockedResponse)
+                            }
+                            Log.i(TAG, "Blocked DNS/TCP query")
+                        } else {
+                            socket.getOutputStream().write(frame)
+                            socket.getOutputStream().flush()
+                        }
+                    }
+                }
+            } catch (error: Throwable) {
+                Log.e(TAG, "DNS/TCP relay failed for $destinationHost:53", error)
+            } finally {
+                runCatching { upstream?.close() }
+                runCatching { appSide.close() }
+                runCatching { downstream?.join(TCP_JOIN_TIMEOUT_MS.toLong()) }
             }
         }
 
